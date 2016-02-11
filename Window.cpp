@@ -102,13 +102,8 @@ void Window::displayCallback()
     //Bind the light to slot 0.  We do this after the camera matrix is loaded so that
     //the light position will be treated as world coordiantes
     //(if we didn't the light would move with the camera, why is that?)
+    Globals::light.bind(0);
 
-    glEnable(GL_LIGHTING);
-
-    glEnable(GL_COLOR_MATERIAL);
-    
-    // Generate light source:
-    glEnable(GL_LIGHTING);
     
     Globals::objdraw->draw(Globals::drawData);
     

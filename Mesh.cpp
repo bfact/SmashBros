@@ -30,7 +30,6 @@ Mesh::Mesh(std::string filename) : Drawable()
     this->vertices = new std::vector<Vertex*>();
     this->normals = new std::vector<Vector3*>();
     this->faces = new std::vector<Face*>();
-    this->edges = new std::map<int, Edge>();
     //this->colors = new std::vector<Vector3*>();
     
     parse(filename);
@@ -72,19 +71,9 @@ void Mesh::draw(DrawData& data)
     for (int i = 0; i < faces->size(); i++) {
         face = faces->at(i);
         for (int j = 0; j < 3; j++) {
-            
-            /*
-            Vector3 vn = *normals->at(face->normalIndices[j]);
-            vn = vn.normalize();
-            glNormal3f(vn[0], vn[1], vn[2]); */
-            
-            /*
-            if (color) {
-                Vector3 c = *colors->at(face->vertexIndices[j]);
-                glColor4f(c[0], c[1], c[2], 0.5);
-            } */
 
             Vertex* v  = vertices->at(face->vertexIndices[j]);
+            glNormal3f(v->vertexNormal->get(0), v->vertexNormal->get(1), v->vertexNormal->get(2));
             glVertex3f(v->coordinate->get(0), v->coordinate->get(1), v->coordinate->get(2));
 
         }
@@ -193,88 +182,10 @@ void Mesh::parse(std::string& filename)
         *v = Vector3(x,y,z);
     }
     
-    //computeEdges();
-    //computeFaceNormals();
+    
     buildConnectivity();
-}
-
-/*
- * Check if edge exists in edge map
- */
-int Mesh::containsValue(Edge e) {
-    std::map<int, Edge>::iterator it;
-    bool found = false;
-    while ( it != edges->end()) {
-        if (it->first) continue;
-        found = (it->second == e);
-        if (found) {
-            return it->first;
-        }
-        ++it;
-    }
-    return(-1);
-}
-
-/*
- * Find first available hole in edge map
- */
-int Mesh::findHole() {
-    int freeIndex = 0;
-    std::map<int, Edge>::iterator it;
-    std::map<int, Edge>::iterator end;
-    for (it = edges->begin(), end = edges->end();
-         it != end && freeIndex == it->first; ++it, ++freeIndex) {}
-    return freeIndex;
-}
-
-// Create an indexed set of edges (similar to vertices) associated with faces
-static int edgeIndex = 0;
-void Mesh::computeEdges() {
-    std::cout << "Computing Edges" << std::endl;
-    for (int i = 0; i < faces->size(); i++) {
-        int edgeIndex0, edgeIndex1, edgeIndex2;
-        
-        // Get Face
-        Face* currFace = faces->at(i);
-        
-        Vertex v0 = *vertices->at(currFace->vertexIndices[0]);
-        Vertex v1 = *vertices->at(currFace->vertexIndices[1]);
-        Vertex v2 = *vertices->at(currFace->vertexIndices[2]);
-        
-        Edge e0(v0, v1);
-        Edge e1(v1, v2);
-        Edge e2(v2, v0);
-        
-        edgeIndex0 = containsValue(e0);
-        // Wasn't found
-        if (edgeIndex0 == -1) {
-            edgeIndex0 = findHole();
-            edges->insert(std::pair<int, Edge>(edgeIndex0, e0));
-        }
-        
-        edgeIndex1 = containsValue(e1);
-        // Wasn't found
-        if (edgeIndex1 == -1) {
-            edgeIndex1 = findHole();
-            edges->insert(std::pair<int, Edge>(edgeIndex1, e1));
-        }
-        
-        edgeIndex0 = containsValue(e0);
-        // Wasn't found
-        if (edgeIndex2 == -1) {
-            edgeIndex2 = findHole();
-            edges->insert(std::pair<int, Edge>(edgeIndex2, e2));
-        }
-        
-        
-        currFace->edgeIndices[0] = edgeIndex0;
-        currFace->edgeIndices[1] = edgeIndex1;
-        currFace->edgeIndices[2] = edgeIndex2;
-    }
-    std::cout << "Done Computing Edges" << std::endl;
-}
-
-void Mesh::computeFaceNormals() {
+    computeFaceNormals();
+    computeVertexNormals();
     
 }
 
@@ -298,6 +209,39 @@ void Mesh::buildConnectivity() {
         }
     }
     std::cout << "Done Building Connectivity" << std::endl;
+}
+
+void Mesh::computeFaceNormals() {
+    std::cout << "Computing Face Normals" << std::endl;
+    for (int i = 0; i < faces->size(); i++) {
+        Face* currFace = faces->at(i);
+        
+        Vertex* v0 = vertices->at(currFace->vertexIndices[0]);
+        Vertex* v1 = vertices->at(currFace->vertexIndices[1]);
+        Vertex* v2 = vertices->at(currFace->vertexIndices[2]);
+        
+        Vector3 a = *v1->coordinate - *v0->coordinate;
+        Vector3 b = *v2->coordinate - *v0->coordinate;
+        
+        currFace->faceNormal = new Vector3((a.cross(b)).normalize());
+    }
+    std::cout << "Done Computing Face Normals" << std::endl;
+}
+
+void Mesh::computeVertexNormals() {
+    std::cout << "Computing Vertex Normals" << std::endl;
+    for (int i = 0; i < vertices->size(); i++) {
+        Vector3 sum = Vector3(0.0, 0.0, 0.0);
+        Vertex* currVert = vertices->at(i);
+        
+        for (int j = 0; j < currVert->faceAdj->size(); j++) {
+            sum = sum + *currVert->faceAdj->at(j)->faceNormal;
+        }
+        sum = sum.scale(1.0/currVert->faceAdj->size());
+        sum.normalize();
+        currVert->vertexNormal = new Vector3(sum);
+    }
+    std::cout << "Done Computing Vertex Normals" << std::endl;
 }
 
 void Mesh::getCenter()

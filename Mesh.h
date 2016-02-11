@@ -17,6 +17,7 @@ struct Vertex {
     std::vector<Face*>* faceAdj = new std::vector<Face*>; // Vector of adjacent faces to this vertex
 };
 
+/*
 struct EdgeData {
     Vertex from;
     Vertex to;
@@ -48,7 +49,7 @@ struct Edge {
     bool operator ==(const Edge& rhs) {
         return data == rhs.data;
     }
-};
+}; */
 
 
 /*
@@ -57,8 +58,8 @@ struct Edge {
 struct Face {
     // Each face has 3 vertices, a face normal, and
     int vertexIndices[3];
-    int edgeIndices[3];
-    Vector3 faceNormal;
+    // int edgeIndices[3];
+    Vector3* faceNormal;
     
     /*
     int vertexIndices[3];
@@ -89,11 +90,9 @@ protected:
     std::vector<Vertex*>* vertices;
     std::vector<Vector3*>* normals;
     std::vector<Face*>* faces;
-    std::map<int, Edge>* edges;
     
     //Parse
     void parse(std::string&);
-    int containsValue(Edge);
     int findHole();
     
     //Calculate center values
@@ -105,8 +104,8 @@ public:
     Mesh(std::string);
     virtual ~Mesh(void);
     
-    void computeEdges();
     void computeFaceNormals();
+    void computeVertexNormals();
     void buildConnectivity();
     
     virtual void draw(DrawData&);
