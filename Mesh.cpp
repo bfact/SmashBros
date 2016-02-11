@@ -513,7 +513,10 @@ void Mesh::edgeCollapse(Vertex* v0, Vertex* v1) {
     // Construct VertToVertAdj for midVert
     findAdjVertices(midVert);
     
-    // Recalculate Vertex Normals
+    // Calculate vertex normal for midVert
+    computeVertexNormal(midVert);
+    
+    // Recalculate Vertex Normals for neighboring vertices
     for (int i = 0; i < midVert->vertToVertAdj->size(); i++) {
         Vertex* currVert = midVert->vertToVertAdj->at(i);
         computeVertexNormal(currVert);
