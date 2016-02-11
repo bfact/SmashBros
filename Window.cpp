@@ -199,11 +199,14 @@ void Window::processNormalKeys(unsigned char key, int x, int y)
                 Globals::flatShading = true;
                 glShadeModel(GL_FLAT);
             }
+            break;
         case 'c':
             Globals::colors = !Globals::colors;
+            break;
             
         case 'd':
             Globals::testpatch->edgeCollapse(Globals::testpatch->vertices->at(0), Globals::testpatch->vertices->at(1));
+            break;
         
     }
 }

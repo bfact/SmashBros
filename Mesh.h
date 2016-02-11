@@ -15,6 +15,7 @@ struct Vertex {
     Vector3* coordinate; // Coordinate for Vertex
     Vector3* vertexNormal;
     std::vector<Face*>* vertToFaceAdj = new std::vector<Face*>; // Vector of adjacent faces to this vertex
+    std::vector<Vertex*>* vertToVertAdj = new std::vector<Vertex*>;
 };
 
 
@@ -73,9 +74,12 @@ public:
     std::vector<Vertex*>* vertices;
     
     void computeFaceNormals();
+    void computeFaceNormal(Face*);
     void computeVertexNormals();
+    void computeVertexNormal(Vertex*);
     void buildConnectivity();
     bool checkDuplicateFaceAdj(Face*, Face*);
+    bool checkDuplicateVertToVertAdj(Vertex*, Vertex*);
     
     void edgeCollapse(Vertex*, Vertex*);
     
@@ -85,6 +89,7 @@ public:
     float halfSizeMAX = 0;
     
     void findAdjFaces(Vertex*);
+    void findAdjVertices(Vertex*);
     bool checkAdjacent(Face*, Face*);
     bool checkDuplicateVertAdj(Vertex*, Face*);
     void removeFace(Face*);

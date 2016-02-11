@@ -262,7 +262,29 @@ void Mesh::buildConnectivity() {
             }
         }
     }
+    
+    /*
+     * Vert->Vert Adjacency
+     */
+    for (int i = 0; i < vertices->size(); i++) {
+        Vertex* currVert = vertices->at(i);
+        findAdjVertices(currVert);
+    }
     std::cout << "Done Building Connectivity" << std::endl;
+}
+
+void Mesh::findAdjVertices(Vertex* currVert) {
+    for (int j = 0; j < currVert->vertToFaceAdj->size(); j++) {
+        Face* currFace = currVert->vertToFaceAdj->at(j);
+        for (int k = 0; k < 3; k++) {
+            Vertex* adjVert = vertices->at(currFace->vertexIndices[k]);
+            if (currVert == adjVert) continue;
+            if (!checkDuplicateVertToVertAdj(currVert, adjVert)) {
+                currVert->vertToVertAdj->push_back(adjVert);
+            }
+        }
+    }
+
 }
 
 // Call on midpoint
@@ -350,37 +372,56 @@ bool Mesh::checkDuplicateVertAdj(Vertex* v0, Face* f0)
     return false;
 }
 
+
+
+bool Mesh::checkDuplicateVertToVertAdj(Vertex* v0, Vertex* v1) {
+    for (int i = 0; i < v0->vertToVertAdj->size(); i++) {
+        Vertex* currVert = v0->vertToVertAdj->at(i);
+        if (currVert == v1) {
+            return true;
+        }
+    }
+    return false;
+} 
+
 void Mesh::computeFaceNormals() {
     std::cout << "Computing Face Normals" << std::endl;
     for (int i = 0; i < faces->size(); i++) {
         Face* currFace = faces->at(i);
-        
-        Vertex* v0 = vertices->at(currFace->vertexIndices[0]);
-        Vertex* v1 = vertices->at(currFace->vertexIndices[1]);
-        Vertex* v2 = vertices->at(currFace->vertexIndices[2]);
-        
-        Vector3 a = *v1->coordinate - *v0->coordinate;
-        Vector3 b = *v2->coordinate - *v0->coordinate;
-        
-        currFace->faceNormal = new Vector3((a.cross(b)).normalize());
+        computeFaceNormal(currFace);
     }
     std::cout << "Done Computing Face Normals" << std::endl;
+}
+
+void Mesh::computeFaceNormal(Face* currFace) {
+    Vertex* v0 = vertices->at(currFace->vertexIndices[0]);
+    Vertex* v1 = vertices->at(currFace->vertexIndices[1]);
+    Vertex* v2 = vertices->at(currFace->vertexIndices[2]);
+    
+    Vector3 a = *v1->coordinate - *v0->coordinate;
+    Vector3 b = *v2->coordinate - *v0->coordinate;
+    
+    currFace->faceNormal = new Vector3((a.cross(b)).normalize());
 }
 
 void Mesh::computeVertexNormals() {
     std::cout << "Computing Vertex Normals" << std::endl;
     for (int i = 0; i < vertices->size(); i++) {
-        Vector3 sum = Vector3(0.0, 0.0, 0.0);
         Vertex* currVert = vertices->at(i);
-        
-        for (int j = 0; j < currVert->vertToFaceAdj->size(); j++) {
-            sum = sum + *currVert->vertToFaceAdj->at(j)->faceNormal;
-        }
-        sum = sum.scale(1.0/currVert->vertToFaceAdj->size());
-        sum.normalize();
-        currVert->vertexNormal = new Vector3(sum);
+        computeVertexNormal(currVert);
     }
     std::cout << "Done Computing Vertex Normals" << std::endl;
+}
+
+void Mesh::computeVertexNormal(Vertex* currVert) {
+    Vector3 sum = Vector3(0.0, 0.0, 0.0);
+    
+    for (int j = 0; j < currVert->vertToFaceAdj->size(); j++) {
+        sum = sum + *currVert->vertToFaceAdj->at(j)->faceNormal;
+    }
+    sum = sum.scale(1.0/currVert->vertToFaceAdj->size());
+    sum.normalize();
+    currVert->vertexNormal = new Vector3(sum);
 }
 
 void Mesh::edgeCollapse(Vertex* v0, Vertex* v1) {
@@ -392,6 +433,7 @@ void Mesh::edgeCollapse(Vertex* v0, Vertex* v1) {
     
     Vertex* midVert = new Vertex;
     midVert->coordinate = &midpoint;
+    vertices->push_back(midVert);
     
     // Adjacent Faces for v0
     // Update vertex array of face to midpoint vertex
@@ -408,8 +450,9 @@ void Mesh::edgeCollapse(Vertex* v0, Vertex* v1) {
     for (int i = 0; i < v1->vertToFaceAdj->size(); i++) {
         Face* currFace = v1->vertToFaceAdj->at(i);
         for (int j = 0; j < 3; j++) {
+            /*
             if (currFace->vertexIndices[j] == vertIndex)
-                continue;
+                continue; */
             
             if (vertices->at(currFace->vertexIndices[j]) == v1) {
                 currFace->vertexIndices[j] = vertIndex;
@@ -461,10 +504,23 @@ void Mesh::edgeCollapse(Vertex* v0, Vertex* v1) {
         }
     }
     
+    // Recalculate Face Normals
+    for (int i = 0; i < midVert->vertToFaceAdj->size(); i++) {
+        Face* currFace = midVert->vertToFaceAdj->at(i);
+        computeFaceNormal(currFace);
+    }
+    
+    // Construct VertToVertAdj for midVert
+    findAdjVertices(midVert);
+    
+    // Recalculate Vertex Normals
+    for (int i = 0; i < midVert->vertToVertAdj->size(); i++) {
+        Vertex* currVert = midVert->vertToVertAdj->at(i);
+        computeVertexNormal(currVert);
+    }
+    
     // Update adjacent faces (call on mid vertex)
     findAdjFaces(midVert);
-    
-    vertices->push_back(midVert);
     
 }
 
