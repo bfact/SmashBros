@@ -1,5 +1,5 @@
-#ifndef CSE167_Globals_h
-#define CSE167_Globals_h
+#ifndef CSE190_Globals_h
+#define CSE190_Globals_h
 
 #include "Camera.h"
 #include "Light.h"
@@ -20,6 +20,8 @@ public:
     
     static Mesh* teapot;
     static Mesh* armadillo;
+    static Mesh* testpatch;
+    static Mesh* plane;
     
     static Drawable *objdraw;
     

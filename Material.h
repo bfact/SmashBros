@@ -1,5 +1,5 @@
-#ifndef CSE167_Material_h
-#define CSE167_Material_h
+#ifndef CSE190_Material_h
+#define CSE190_Material_h
 
 #include <iostream>
 #include "Color.h"

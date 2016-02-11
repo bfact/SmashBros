@@ -225,13 +225,20 @@ void Window::processSpecialKeys(int key, int x, int y)
 {
     
     switch (key) {
-        case GLUT_KEY_F1:
+        case GLUT_KEY_F1:    // armadillo
             Globals::objdraw = Globals::armadillo;
             Globals::camera = Camera();
             break;
-            
         case GLUT_KEY_F2:    // bunny
             Globals::objdraw = Globals::teapot;
+            Globals::camera = Camera();
+            break;
+        case GLUT_KEY_F3:    // testpatch
+            Globals::objdraw = Globals::testpatch;
+            Globals::camera = Camera();
+            break;
+        case GLUT_KEY_F4:    // plane
+            Globals::objdraw = Globals::plane;
             Globals::camera = Camera();
             break;
     }

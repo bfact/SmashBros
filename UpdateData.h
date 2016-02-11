@@ -1,5 +1,5 @@
-#ifndef CSE167_UpdateData_h
-#define CSE167_UpdateData_h
+#ifndef CSE190_UpdateData_h
+#define CSE190_UpdateData_h
 
 #include <iostream>
 

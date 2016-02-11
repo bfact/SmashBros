@@ -1,5 +1,5 @@
-#ifndef CSE167_Light_h
-#define CSE167_Light_h
+#ifndef CSE190_Light_h
+#define CSE190_Light_h
 
 #include "Matrix4.h"
 #include "Vector4.h"

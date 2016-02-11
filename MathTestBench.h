@@ -1,5 +1,5 @@
-#ifndef CSE167_MathTestBench_h
-#define CSE167_MathTestBench_h
+#ifndef CSE190_MathTestBench_h
+#define CSE190_MathTestBench_h
 
 #include <iostream>
 

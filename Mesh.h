@@ -1,5 +1,5 @@
-#ifndef CSE167_Mesh_h
-#define CSE167_Mesh_h
+#ifndef CSE190_Mesh_h
+#define CSE190_Mesh_h
 
 #include <iostream>
 #include <vector>
@@ -14,42 +14,8 @@ struct Face;
 struct Vertex {
     Vector3* coordinate; // Coordinate for Vertex
     Vector3* vertexNormal;
-    std::vector<Face*>* faceAdj = new std::vector<Face*>; // Vector of adjacent faces to this vertex
+    std::vector<Face*>* vertToFaceAdj = new std::vector<Face*>; // Vector of adjacent faces to this vertex
 };
-
-/*
-struct EdgeData {
-    Vertex from;
-    Vertex to;
-    //float weight;
-    
-    EdgeData(Vertex from, Vertex to) {
-        this->from = from;
-        this->to = to;
-    }
-    
-    bool operator ==(const EdgeData& rhs) {
-        if (( (to.coordinate == rhs.to.coordinate) && (from.coordinate == rhs.from.coordinate) ) ||
-            ( (to.coordinate == rhs.from.coordinate) && (from.coordinate == rhs.to.coordinate) )) {
-                return true;
-            }
-            else {
-                return false;
-            }
-    }
-};
-
-struct Edge {
-    // Edges are formed from 2 Vertices
-    EdgeData data;
-    std::vector<Face*>* faceAdj = new std::vector<Face*>; // Vector of adjacent faces to this edge
-    
-    Edge(Vertex from, Vertex to) : data(from, to) {}
-    
-    bool operator ==(const Edge& rhs) {
-        return data == rhs.data;
-    }
-}; */
 
 
 /*
@@ -58,8 +24,8 @@ struct Edge {
 struct Face {
     // Each face has 3 vertices, a face normal, and
     int vertexIndices[3];
-    // int edgeIndices[3];
     Vector3* faceNormal;
+    std::vector<Face*>* faceToFaceAdj = new std::vector<Face*>; // Vector of neighboring faces
     
     /*
     int vertexIndices[3];
@@ -107,6 +73,9 @@ public:
     void computeFaceNormals();
     void computeVertexNormals();
     void buildConnectivity();
+    bool checkDuplicate(Face*, Face*);
+    
+    void edgeCollapse(Vertex*, Vertex*);
     
     virtual void draw(DrawData&);
     virtual void update(UpdateData&);

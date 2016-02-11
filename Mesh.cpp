@@ -194,8 +194,8 @@ void Mesh::parse(std::string& filename)
  * to construct connectivity in our data structure
  */
 void Mesh::buildConnectivity() {
-    // What I have to work with: Faces and Vertices
     std::cout << "Building Connectivity" << std::endl;
+    
     /*
      * Vertex->Face Adjacency
      *      Loop through all the faces, add face to its vertices' vertex adjacencies
@@ -205,10 +205,69 @@ void Mesh::buildConnectivity() {
         
         for (int j = 0; j < 3; j++) {
             Vertex* currVert = vertices->at(currFace->vertexIndices[j]);
-            currVert->faceAdj->push_back(currFace);
+            currVert->vertToFaceAdj->push_back(currFace);
+        }
+    }
+    
+    /*
+     * Face->Face Adjacency:
+     *      Two faces are adjacent if they share a common edge, i.e. they
+     *      have 2 vertices in common.
+     *
+     * Pseudocode Outline:
+     * 
+     *      For each face:
+     *          For each of its vertices:
+     *              Loop through vertex's vertToFaceAdj:
+     *                  If any of these faces share another vertex with original Face, it is
+     *                  adjacent. Add faces to each other's faceToFaceAdj
+     */
+    for (int i = 0; i < faces->size(); i++) {
+        Face* currFace = faces->at(i);
+        for (int j = 0; j < 3; j++) {
+            Vertex* currVert = vertices->at(currFace->vertexIndices[j]);
+            
+            // The other 2 vertexIndices that aren't j
+            int j1 = (j+1)%3;
+            int j2 = (j+2)%3;
+            
+            for (int k = 0; k < currVert->vertToFaceAdj->size(); k++) {
+                Face* adjFace = currVert->vertToFaceAdj->at(k);
+                if (currFace == adjFace) continue;
+                
+                // Check for another shared vertex besides current j
+                for (int n = 0; n < 3; n++) {
+                    // We know we are going to share at least one common vertex specified by index j
+                    if (currFace->vertexIndices[j] == adjFace->vertexIndices[n]) {
+                        continue;
+                    }
+                    else {
+                        if (currFace->vertexIndices[j1] == adjFace->vertexIndices[n] ||
+                            currFace->vertexIndices[j2] == adjFace->vertexIndices[n]) {
+                            // Faces add each other to adjacencies
+                            if (!checkDuplicate(currFace, adjFace)) {
+                                currFace->faceToFaceAdj->push_back(adjFace);
+                                adjFace->faceToFaceAdj->push_back(currFace);
+                            }
+                        }
+                    }
+                }
+            }
         }
     }
     std::cout << "Done Building Connectivity" << std::endl;
+}
+
+/*
+ * Check if these faces are in each other's face adjacencies
+ */
+bool Mesh::checkDuplicate(Face* f0, Face* f1) {
+    for (int i = 0; i < f0->faceToFaceAdj->size(); i++) {
+        if (f0->faceToFaceAdj->at(i) == f1) {
+            return true;
+        }
+    }
+    return false;
 }
 
 void Mesh::computeFaceNormals() {
@@ -234,14 +293,68 @@ void Mesh::computeVertexNormals() {
         Vector3 sum = Vector3(0.0, 0.0, 0.0);
         Vertex* currVert = vertices->at(i);
         
-        for (int j = 0; j < currVert->faceAdj->size(); j++) {
-            sum = sum + *currVert->faceAdj->at(j)->faceNormal;
+        for (int j = 0; j < currVert->vertToFaceAdj->size(); j++) {
+            sum = sum + *currVert->vertToFaceAdj->at(j)->faceNormal;
         }
-        sum = sum.scale(1.0/currVert->faceAdj->size());
+        sum = sum.scale(1.0/currVert->vertToFaceAdj->size());
         sum.normalize();
         currVert->vertexNormal = new Vector3(sum);
     }
     std::cout << "Done Computing Vertex Normals" << std::endl;
+}
+
+void Mesh::edgeCollapse(Vertex* v0, Vertex* v1) {
+    Vector3 v0_pos = *v0->coordinate;
+    Vector3 v1_pos = *v1->coordinate;
+    
+    Vector3 midpoint = (v0_pos + v1_pos).scale(0.5);
+    int vertIndex = (int)vertices->size();
+    
+    // Adjacent Faces for v0
+    for (int i = 0; i < v0->vertToFaceAdj->size(); i++) {
+        Face* currFace = v0->vertToFaceAdj->at(i);
+        for (int j = 0; j < 3; j++) {
+            if (vertices->at(currFace->vertexIndices[j]) == v0) {
+                currFace->vertexIndices[j] = vertIndex;
+            }
+        }
+    }
+    
+    // Adjacent Faces for v1
+    for (int i = 0; i < v1->vertToFaceAdj->size(); i++) {
+        Face* currFace = v1->vertToFaceAdj->at(i);
+        for (int j = 0; j < 3; j++) {
+            if (vertices->at(currFace->vertexIndices[j]) == v1) {
+                currFace->vertexIndices[j] = vertIndex;
+            }
+        }
+    }
+    
+    // Remove Degenerate Faces in v0's Face Adjacency
+    for (int i = 0; i < v0->vertToFaceAdj->size(); i++) {
+        Face* currFace = v0->vertToFaceAdj->at(i);
+        int i0 = currFace->vertexIndices[0];
+        int i1 = currFace->vertexIndices[1];
+        int i2 = currFace->vertexIndices[2];
+        
+        // If at least 2 of the above indices are equal, then the face is degenerate
+        if (i0 == i1 || i1 == i2 || i0 == i2) {
+            // TODO: Need FaceToFaceAdjacency
+        }
+    }
+    
+    // Remove Degenerate Faces in v1's Face Adjacency
+    for (int i = 0; i < v1->vertToFaceAdj->size(); i++) {
+        Face* currFace = v1->vertToFaceAdj->at(i);
+        int i0 = currFace->vertexIndices[0];
+        int i1 = currFace->vertexIndices[1];
+        int i2 = currFace->vertexIndices[2];
+        
+        // If at least 2 of the above indices are equal, then the face is degenerate
+        if (i0 == i1 || i1 == i2 || i0 == i2) {
+            // TODO: Need FaceToFaceAdjacency
+        }
+    }
 }
 
 void Mesh::getCenter()

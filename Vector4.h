@@ -1,5 +1,5 @@
-#ifndef CSE167_Vector4_h
-#define CSE167_Vector4_h
+#ifndef CSE190_Vector4_h
+#define CSE190_Vector4_h
 
 #include <string>
 

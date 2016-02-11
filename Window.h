@@ -1,5 +1,5 @@
-#ifndef CSE167_Window_h
-#define CSE167_Window_h
+#ifndef CSE190_Window_h
+#define CSE190_Window_h
 
 #include "Vector3.h"
 
