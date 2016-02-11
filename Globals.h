@@ -5,7 +5,7 @@
 #include "Light.h"
 #include "DrawData.h"
 #include "UpdateData.h"
-#include "OBJObject.h"
+#include "Mesh.h"
 
 class Globals
 {
@@ -18,8 +18,8 @@ public:
     static UpdateData updateData;
     //Feel free to add more member variables as needed
     
-    static OBJObject* teapot;
-    static OBJObject* armadillo;
+    static Mesh* teapot;
+    static Mesh* armadillo;
     
     
     static Drawable *objdraw;

@@ -1,7 +1,13 @@
 #include "Globals.h"
 
+/*
 #define TEAPOT "/Users/BrittanyFactura/Github/smashbros/OFF Files/teapot.off"
-#define ARMADILLO "/Users/BrittanyFactura/Github/smashbros/OFF Files/armadillo.off"
+#define ARMADILLO "/Users/BrittanyFactura/Github/smashbros/OFF Files/armadillo.off" */
+
+#define TEAPOT "/Users/seanwenzel/Github/SmashBros/OFF Files/teapot.off"
+#define ARMADILLO "/Users/seanwenzel/Github/SmashBros/OFF Files/armadillo.off"
+
+
 
 Camera Globals::camera;
 
@@ -11,8 +17,8 @@ DrawData Globals::drawData;
 UpdateData Globals::updateData;
 
 
-OBJObject* Globals::teapot = new OBJObject(TEAPOT);
-OBJObject* Globals::armadillo = new OBJObject(ARMADILLO);
+Mesh* Globals::teapot = new Mesh(TEAPOT);
+Mesh* Globals::armadillo = new Mesh(ARMADILLO);
 
 Drawable *Globals::objdraw = Globals::armadillo;
 
