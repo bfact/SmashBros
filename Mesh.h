@@ -92,7 +92,12 @@ public:
     void findAdjVertices(Vertex*);
     bool checkAdjacent(Face*, Face*);
     bool checkDuplicateVertAdj(Vertex*, Face*);
+    bool checkDuplicateVertToVert(Vertex*, Vertex*);
     void removeFace(Face*);
+    
+    
+    void computeFaceNormals(Face*);
+    
     
     // Given face, find its vertices
     // Given vertex, find faces touching it

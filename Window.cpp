@@ -203,9 +203,8 @@ void Window::processNormalKeys(unsigned char key, int x, int y)
         case 'c':
             Globals::colors = !Globals::colors;
             break;
-            
         case 'd':
-            Globals::testpatch->edgeCollapse(Globals::testpatch->vertices->at(0), Globals::testpatch->vertices->at(1));
+            Globals::objdraw->edgeCollapse(Globals::objdraw->vertices->at(0), Globals::objdraw->vertices->at(1));
             break;
         
     }

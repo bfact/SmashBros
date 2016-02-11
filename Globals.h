@@ -23,7 +23,7 @@ public:
     static Mesh* testpatch;
     static Mesh* plane;
     
-    static Drawable *objdraw;
+    static Mesh* objdraw;
     
     // Boolean Flats
     static bool flatShading;

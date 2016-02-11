@@ -24,11 +24,7 @@ public:
     
     virtual void draw(DrawData&);
     virtual void update(UpdateData&);
-    
-    void getHalfSize(float, float, float, float, float, float);
-    
-    float halfSizeMAX = 0;
-    
+        
 };
 
 #endif

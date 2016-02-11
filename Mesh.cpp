@@ -179,7 +179,7 @@ void Mesh::parse(std::string& filename)
     std::cout << "Done parsing: " << filename << std::endl;
     
     getCenter();
-    Drawable::getHalfSize(maxX, maxY, maxZ, minX, minY, minZ);
+    getHalfSize();
     
     for (int i = 0; i < vertices->size(); i++) {
         Vector3* v  = vertices->at(i)->coordinate;
@@ -193,7 +193,6 @@ void Mesh::parse(std::string& filename)
     buildConnectivity();
     computeFaceNormals();
     computeVertexNormals();
-    
 }
 
 /*
@@ -359,8 +358,6 @@ bool Mesh::checkDuplicateFaceAdj(Face* f0, Face* f1) {
     return false;
 }
 
-
-
 bool Mesh::checkDuplicateVertAdj(Vertex* v0, Face* f0)
 {
     for (int i = 0; i < v0->vertToFaceAdj->size(); i++) {
@@ -373,7 +370,6 @@ bool Mesh::checkDuplicateVertAdj(Vertex* v0, Face* f0)
 }
 
 
-
 bool Mesh::checkDuplicateVertToVertAdj(Vertex* v0, Vertex* v1) {
     for (int i = 0; i < v0->vertToVertAdj->size(); i++) {
         Vertex* currVert = v0->vertToVertAdj->at(i);
@@ -383,6 +379,7 @@ bool Mesh::checkDuplicateVertToVertAdj(Vertex* v0, Vertex* v1) {
     }
     return false;
 } 
+
 
 void Mesh::computeFaceNormals() {
     std::cout << "Computing Face Normals" << std::endl;
@@ -512,7 +509,6 @@ void Mesh::edgeCollapse(Vertex* v0, Vertex* v1) {
     
     // Construct VertToVertAdj for midVert
     findAdjVertices(midVert);
-    
     // Calculate vertex normal for midVert
     computeVertexNormal(midVert);
     
@@ -521,7 +517,7 @@ void Mesh::edgeCollapse(Vertex* v0, Vertex* v1) {
         Vertex* currVert = midVert->vertToVertAdj->at(i);
         computeVertexNormal(currVert);
     }
-    
+        
     // Update adjacent faces (call on mid vertex)
     findAdjFaces(midVert);
     
