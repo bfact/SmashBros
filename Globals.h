@@ -21,8 +21,10 @@ public:
     static Mesh* teapot;
     static Mesh* armadillo;
     
-    
     static Drawable *objdraw;
+    
+    // Boolean Flats
+    static bool flatShading;
 };
 
 #endif

@@ -190,6 +190,15 @@ void Window::processNormalKeys(unsigned char key, int x, int y)
             Globals::objdraw->toWorld = m.multiply(Globals::objdraw->toWorld);
             displayPosition();
             break;
+        case 'f':   // toggle flat shading on and off
+            if (Globals::flatShading) {
+                Globals::flatShading = false;
+                glShadeModel(GL_SMOOTH);
+            }
+            else {
+                Globals::flatShading = true;
+                glShadeModel(GL_FLAT);
+            }
         
     }
 }

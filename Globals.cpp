@@ -22,5 +22,7 @@ Mesh* Globals::armadillo = new Mesh(ARMADILLO);
 
 Drawable *Globals::objdraw = Globals::armadillo;
 
+bool Globals::flatShading = true;
+
 // Lights
 
