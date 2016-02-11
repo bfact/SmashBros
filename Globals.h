@@ -27,6 +27,7 @@ public:
     
     // Boolean Flats
     static bool flatShading;
+    static bool colors;
 };
 
 #endif

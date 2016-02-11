@@ -53,7 +53,7 @@ protected:
     float centerZ = 0;
     
     //Storage vectors
-    std::vector<Vertex*>* vertices;
+
     std::vector<Vector3*>* normals;
     std::vector<Face*>* faces;
     
@@ -69,11 +69,13 @@ public:
     
     Mesh(std::string);
     virtual ~Mesh(void);
+
+    std::vector<Vertex*>* vertices;
     
     void computeFaceNormals();
     void computeVertexNormals();
     void buildConnectivity();
-    bool checkDuplicate(Face*, Face*);
+    bool checkDuplicateFaceAdj(Face*, Face*);
     
     void edgeCollapse(Vertex*, Vertex*);
     
@@ -81,6 +83,11 @@ public:
     virtual void update(UpdateData&);
     
     float halfSizeMAX = 0;
+    
+    void findAdjFaces(Vertex*);
+    bool checkAdjacent(Face*, Face*);
+    bool checkDuplicateVertAdj(Vertex*, Face*);
+    void removeFace(Face*);
     
     // Given face, find its vertices
     // Given vertex, find faces touching it

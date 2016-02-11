@@ -67,11 +67,18 @@ void Mesh::draw(DrawData& data)
     //      glVert(vertices->at(face.vertexIndices[0]))
     //      Etc.
     //
+    srand(1);
     
     for (int i = 0; i < faces->size(); i++) {
         face = faces->at(i);
+        if (Globals::colors == true) {
+            glColor3f((float)(rand() % 100)/100, (float)(rand() % 100)/100, (float)(rand() % 100)/100);
+        }
+        else {
+            glColor3f(1, 1, 1);
+        }
+        
         for (int j = 0; j < 3; j++) {
-
             Vertex* v  = vertices->at(face->vertexIndices[j]);
             glNormal3f(v->vertexNormal->get(0), v->vertexNormal->get(1), v->vertexNormal->get(2));
             glVertex3f(v->coordinate->get(0), v->coordinate->get(1), v->coordinate->get(2));
@@ -245,7 +252,7 @@ void Mesh::buildConnectivity() {
                         if (currFace->vertexIndices[j1] == adjFace->vertexIndices[n] ||
                             currFace->vertexIndices[j2] == adjFace->vertexIndices[n]) {
                             // Faces add each other to adjacencies
-                            if (!checkDuplicate(currFace, adjFace)) {
+                            if (!checkDuplicateFaceAdj(currFace, adjFace)) {
                                 currFace->faceToFaceAdj->push_back(adjFace);
                                 adjFace->faceToFaceAdj->push_back(currFace);
                             }
@@ -258,12 +265,85 @@ void Mesh::buildConnectivity() {
     std::cout << "Done Building Connectivity" << std::endl;
 }
 
+// Call on midpoint
+void Mesh::findAdjFaces(Vertex* currVert)
+{
+    for (int k = 0; k < currVert->vertToFaceAdj->size(); k++) {
+        Face* currFace = currVert->vertToFaceAdj->at(k);
+        
+        for (int j = 0; j < currVert->vertToFaceAdj->size(); j++) {
+            Face* adjFace = currVert->vertToFaceAdj->at(j);
+            
+            if (currFace == adjFace)
+                continue;
+            
+            if (checkAdjacent(currFace, adjFace) == true) {
+                if (!checkDuplicateFaceAdj(currFace, adjFace)) {
+                    currFace->faceToFaceAdj->push_back(adjFace);
+                    adjFace->faceToFaceAdj->push_back(currFace);
+                }
+            }
+        }
+    }
+}
+
+bool Mesh::checkAdjacent(Face* currFace, Face* adjFace)
+{
+    int count = 0;
+    for (int i = 0; i < 3; i++) {
+        int currInd = currFace->vertexIndices[i];
+        for (int j = 0; j < 3; j++) {
+            int adjInd = adjFace->vertexIndices[j];
+            
+            if (currInd == adjInd) {
+                count++;
+                break;
+            }
+        }
+    }
+    
+    if (count == 2)
+        return true;
+    else
+        return false;
+}
+
+
+void Mesh::removeFace(Face* deadFace)
+{
+    for (int i = 0; i < deadFace->faceToFaceAdj->size(); i++) {
+        Face* adjFace = deadFace->faceToFaceAdj->at(i);
+        
+        for (int j = 0; j < adjFace->faceToFaceAdj->size(); j++) {
+            Face* removeFace = adjFace->faceToFaceAdj->at(j);
+            
+            if (removeFace == deadFace) {
+                adjFace->faceToFaceAdj->erase(adjFace->faceToFaceAdj->begin() + j);
+                break;
+            }
+        }
+    }
+}
+
 /*
  * Check if these faces are in each other's face adjacencies
  */
-bool Mesh::checkDuplicate(Face* f0, Face* f1) {
+bool Mesh::checkDuplicateFaceAdj(Face* f0, Face* f1) {
     for (int i = 0; i < f0->faceToFaceAdj->size(); i++) {
         if (f0->faceToFaceAdj->at(i) == f1) {
+            return true;
+        }
+    }
+    return false;
+}
+
+
+
+bool Mesh::checkDuplicateVertAdj(Vertex* v0, Face* f0)
+{
+    for (int i = 0; i < v0->vertToFaceAdj->size(); i++) {
+        Face* currFace = v0->vertToFaceAdj->at(i);
+        if (currFace == f0) {
             return true;
         }
     }
@@ -310,7 +390,11 @@ void Mesh::edgeCollapse(Vertex* v0, Vertex* v1) {
     Vector3 midpoint = (v0_pos + v1_pos).scale(0.5);
     int vertIndex = (int)vertices->size();
     
+    Vertex* midVert = new Vertex;
+    midVert->coordinate = &midpoint;
+    
     // Adjacent Faces for v0
+    // Update vertex array of face to midpoint vertex
     for (int i = 0; i < v0->vertToFaceAdj->size(); i++) {
         Face* currFace = v0->vertToFaceAdj->at(i);
         for (int j = 0; j < 3; j++) {
@@ -324,6 +408,9 @@ void Mesh::edgeCollapse(Vertex* v0, Vertex* v1) {
     for (int i = 0; i < v1->vertToFaceAdj->size(); i++) {
         Face* currFace = v1->vertToFaceAdj->at(i);
         for (int j = 0; j < 3; j++) {
+            if (currFace->vertexIndices[j] == vertIndex)
+                continue;
+            
             if (vertices->at(currFace->vertexIndices[j]) == v1) {
                 currFace->vertexIndices[j] = vertIndex;
             }
@@ -340,6 +427,7 @@ void Mesh::edgeCollapse(Vertex* v0, Vertex* v1) {
         // If at least 2 of the above indices are equal, then the face is degenerate
         if (i0 == i1 || i1 == i2 || i0 == i2) {
             // TODO: Need FaceToFaceAdjacency
+            removeFace(currFace);
         }
     }
     
@@ -353,8 +441,31 @@ void Mesh::edgeCollapse(Vertex* v0, Vertex* v1) {
         // If at least 2 of the above indices are equal, then the face is degenerate
         if (i0 == i1 || i1 == i2 || i0 == i2) {
             // TODO: Need FaceToFaceAdjacency
+            removeFace(currFace);
         }
     }
+    
+    // Create midpoint vertex adjacent face list
+    // Union of v0 and v1
+    for (int i = 0; i < v0->vertToFaceAdj->size(); i++) {
+        Face* currFace = v0->vertToFaceAdj->at(i);
+        if (checkDuplicateVertAdj(midVert, currFace) == false) {
+            midVert->vertToFaceAdj->push_back(currFace);
+        }
+    }
+    
+    for (int i = 0; i < v1->vertToFaceAdj->size(); i++) {
+        Face* currFace = v1->vertToFaceAdj->at(i);
+        if (checkDuplicateVertAdj(midVert, currFace) == false) {
+            midVert->vertToFaceAdj->push_back(currFace);
+        }
+    }
+    
+    // Update adjacent faces (call on mid vertex)
+    findAdjFaces(midVert);
+    
+    vertices->push_back(midVert);
+    
 }
 
 void Mesh::getCenter()
