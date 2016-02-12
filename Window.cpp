@@ -35,20 +35,23 @@ void Window::initialize(void)
     Vector4 lightPos(0.0, 10.0, 15.0, 1.0);
     Globals::light.position = lightPos;
     Globals::light.quadraticAttenuation = 0.02;
+
     
     //Setup size
-    float tan = (30/180.0) * M_PI;
-    
-    
+    //float tan = (30/180.0) * M_PI;
+    /*
     Matrix4 setup;
     setup.makeScale((16.37 * tan)/Globals::objdraw->halfSizeMAX);
     Globals::objdraw->toWorld = setup.multiply(Globals::objdraw->toWorld);
+    */
     
     /*
     Matrix4 setupD;
-    setupD.makeScale((20 * tan)/Globals::dragon.halfSizeMAX);
-    Globals::dragon.toWorld = setupD.multiply(Globals::dragon.toWorld);
+    setupD.makeScale((20 * tan)/Globals::objdraw->halfSizeMAX);
+    Globals::objdraw->toWorld = setupD.multiply(Globals::objdraw->toWorld);
+    */
     
+    /*
     Matrix4 setupBE;
     setupBE.makeScale((19.85 * tan)/Globals::bear.halfSizeMAX);
     Globals::bear.toWorld = setupBE.multiply(Globals::bear.toWorld);
@@ -104,7 +107,6 @@ void Window::displayCallback()
     //(if we didn't the light would move with the camera, why is that?)
     Globals::light.bind(0);
 
-    
     Globals::objdraw->draw(Globals::drawData);
     
     //Pop off the changes we made to the matrix stack this frame
@@ -206,7 +208,6 @@ void Window::processNormalKeys(unsigned char key, int x, int y)
         case 'd':
             Globals::objdraw->edgeCollapse(Globals::objdraw->vertices->at(0), Globals::objdraw->vertices->at(1));
             break;
-        
     }
 }
 

@@ -33,6 +33,13 @@ Mesh::Mesh(std::string filename) : Drawable()
     //this->colors = new std::vector<Vector3*>();
     
     parse(filename);
+    
+    //Setup size
+    float tan = (30/180.0) * M_PI;
+    
+    Matrix4 setup;
+    setup.makeScale((16.37 * tan)/halfSizeMAX);
+    toWorld = setup.multiply(toWorld);
 }
 
 Mesh::~Mesh()

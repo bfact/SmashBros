@@ -27,7 +27,7 @@ Mesh* Globals::armadillo = new Mesh(ARMADILLO);
 Mesh* Globals::testpatch = new Mesh(TESTPATCH);
 Mesh* Globals::plane = new Mesh(PLANE);
 
-Mesh* Globals::objdraw = Globals::plane;
+Mesh* Globals::objdraw = Globals::testpatch;
 
 bool Globals::flatShading = true;
 bool Globals::colors = false;
