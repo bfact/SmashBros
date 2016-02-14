@@ -22,6 +22,7 @@ public:
     float& operator [] (int);
     
     void set(float,float,float,float);
+    float get(int);
     
     
     Vector4 add(Vector4&);

@@ -38,6 +38,10 @@ void Vector4::set(float x, float y, float z, float w)
     m[3] = w;
 }
 
+float Vector4::get(int element) {
+    return m[element];
+}
+
 float& Vector4::operator [] (int loc)
 {
     return m[loc];

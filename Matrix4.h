@@ -38,6 +38,8 @@ public:
     Vector3 multiply(Vector3);
     Vector3 operator * (Vector3);
     
+    Matrix4 operator + (Matrix4);
+    
     Matrix4 makeRotateX(float);
     Matrix4 makeRotateY(float);
     Matrix4 makeRotateZ(float);

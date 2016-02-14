@@ -159,6 +159,17 @@ Vector3 Matrix4::operator * (Vector3 a)
     return multiply(a);
 }
 
+Matrix4 Matrix4::operator+(Matrix4 a) {
+    Matrix4 r;
+    
+    for (int i = 0; i < 4; i++) {
+        for (int j = 0; j < 4; j++) {
+            r.m[i][j] = m[i][j] + a.m[i][j];
+        }
+    }
+    return r;
+}
+
 Matrix4 Matrix4::makeRotateX(float angle)
 {
     identity();

@@ -200,6 +200,8 @@ void Mesh::parse(std::string& filename)
     buildConnectivity();
     computeFaceNormals();
     computeVertexNormals();
+    computeKMatrices();
+    computeQMatrices();
 }
 
 /*
@@ -426,6 +428,51 @@ void Mesh::computeVertexNormal(Vertex* currVert) {
     sum = sum.scale(1.0/currVert->vertToFaceAdj->size());
     sum.normalize();
     currVert->vertexNormal = new Vector3(sum);
+}
+
+void Mesh::computeKMatrices() {
+    for (int i = 0; i < faces->size(); i++) {
+        Face* currFace = faces->at(i);
+        computeKMatrix(currFace);
+    }
+}
+
+void Mesh::computeKMatrix(Face* currFace) {
+    Vector3 negA = *vertices->at(currFace->vertexIndices[0])->coordinate;
+    negA = negA.scale(-1.0);
+    Vector3 normal = *currFace->faceNormal;
+    
+    
+    Vector4 p(currFace->faceNormal->get(0),
+              currFace->faceNormal->get(1),
+              currFace->faceNormal->get(2),
+              negA.dot(normal));
+    
+    float a = p.get(0);
+    float b = p.get(1);
+    float c = p.get(2);
+    float d = p.get(3);
+    
+    
+    // Compute Matrix K
+    currFace->K.set(a*a, a*b, a*c, a*d,
+                    a*b, b*b, b*c, b*d,
+                    a*c, b*c, c*c, c*d,
+                    a*d, b*d, c*d, d*d);
+}
+
+void Mesh::computeQMatrices() {
+    for (int i = 0; i < vertices->size(); i++) {
+        Vertex* currVert = vertices->at(i);
+        computeQMatrix(currVert);
+    }
+}
+
+void Mesh::computeQMatrix(Vertex* currVert) {
+    for (int i = 0; i < currVert->vertToFaceAdj->size(); i++) {
+        Face* currFace = currVert->vertToFaceAdj->at(i);
+        currVert->Q = currVert->Q + currFace->K;
+    }
 }
 
 void Mesh::edgeCollapse(Vertex* v0, Vertex* v1) {

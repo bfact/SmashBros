@@ -6,6 +6,8 @@
 #include <map>
 #include <string>
 #include "Vector3.h"
+#include "Vector4.h"
+#include "Matrix4.h"
 #include "Drawable.h"
 
 /* Forward Declarations */
@@ -16,6 +18,11 @@ struct Vertex {
     Vector3* vertexNormal;
     std::vector<Face*>* vertToFaceAdj = new std::vector<Face*>; // Vector of adjacent faces to this vertex
     std::vector<Vertex*>* vertToVertAdj = new std::vector<Vertex*>;
+    
+    /* Quadric Error Metrics */
+    // With each vertex, we associate the set of pairs of which it is a member
+    
+    Matrix4 Q;
 };
 
 
@@ -28,10 +35,9 @@ struct Face {
     Vector3* faceNormal;
     std::vector<Face*>* faceToFaceAdj = new std::vector<Face*>; // Vector of neighboring faces
     
-    /*
-    int vertexIndices[3];
-    int normalIndices[3]; */
-    //Add more members as necessary
+    /* Quadric Error Metrics */
+    //Vector4 p;
+    Matrix4 K;
 };
 
 
@@ -77,6 +83,10 @@ public:
     void computeFaceNormal(Face*);
     void computeVertexNormals();
     void computeVertexNormal(Vertex*);
+    void computeKMatrices();
+    void computeKMatrix(Face*);
+    void computeQMatrices();
+    void computeQMatrix(Vertex*);
     void buildConnectivity();
     bool checkDuplicateFaceAdj(Face*, Face*);
     bool checkDuplicateVertToVertAdj(Vertex*, Vertex*);
