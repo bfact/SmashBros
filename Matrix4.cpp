@@ -46,6 +46,10 @@ void Matrix4::set(float m00, float m01, float m02, float m03,
     m[3][3] = m33;
 }
 
+void Matrix4::setElement(int col, int row, float value) {
+    m[col][row] = value;
+}
+
 float Matrix4::get(int column, int element)
 {
     return m[column][element];
@@ -297,8 +301,43 @@ Matrix4 Matrix4::inverse(void)
 {
     Matrix4 b;
     
-    //Not required
-    //Calculate the inverse of this matrix
+    float s0 = m[0][0] * m[1][1] - m[1][0] * m[0][1];
+    float s1 = m[0][0] * m[1][2] - m[1][0] * m[0][2];
+    float s2 = m[0][0] * m[1][3] - m[1][0] * m[0][3];
+    float s3 = m[0][1] * m[1][2] - m[1][1] * m[0][2];
+    float s4 = m[0][1] * m[1][3] - m[1][1] * m[0][3];
+    float s5 = m[0][2] * m[1][3] - m[1][2] * m[0][3];
+    
+    float c5 = m[2][2] * m[3][3] - m[3][2] * m[2][3];
+    float c4 = m[2][1] * m[3][3] - m[3][1] * m[2][3];
+    float c3 = m[2][1] * m[3][2] - m[3][1] * m[2][2];
+    float c2 = m[2][0] * m[3][3] - m[3][0] * m[2][3];
+    float c1 = m[2][0] * m[3][2] - m[3][0] * m[2][2];
+    float c0 = m[2][0] * m[3][1] - m[3][0] * m[2][1];
+    
+    // Should check for 0 determinant
+    
+    float invdet  = 1 / (s0 * c5 - s1 * c4 + s2 * c3 + s3 * c2 - s4 * c1 + s5 * c0);
+    
+    b.m[0][0] = (m[1][1] * c5 - m[1][2] * c4 + m[1][3] * c3) * invdet;
+    b.m[0][1] = (-m[0][1] * c5 + m[0][2] * c4 - m[0][3] * c3) * invdet;
+    b.m[0][2] = (m[3][1] * s5 - m[3][2] * s4 + m[3][3] * s3) * invdet;
+    b.m[0][3] = (-m[2][1] * s5 + m[2][2] * s4 - m[2][3] * s3) * invdet;
+    
+    b.m[1][0] = (-m[1][0] * c5 + m[1][2] * c2 - m[1][3] * c1) * invdet;
+    b.m[1][1] = (m[0][0] * c5 - m[0][2] * c2 + m[0][3] * c1) * invdet;
+    b.m[1][2] = (-m[3][0] * s5 + m[3][2] * s2 - m[3][3] * s1) * invdet;
+    b.m[1][3] = (m[2][0] * s5 - m[2][2] * s2 + m[2][3] * s1) * invdet;
+    
+    b.m[2][0] = (m[1][0] * c4 - m[1][1] * c2 + m[1][3] * c0) * invdet;
+    b.m[2][1] = (-m[0][0] * c4 + m[0][1] * c2 - m[0][3] * c0) * invdet;
+    b.m[2][2] = (m[3][0] * s4 - m[3][1] * s2 + m[3][3] * s0) * invdet;
+    b.m[2][3] = (-m[2][0] * s4 + m[2][1] * s2 - m[2][3] * s0) * invdet;
+    
+    b.m[3][0] = (-m[1][0] * c3 + m[1][1] * c1 - m[1][2] * c0) * invdet;
+    b.m[3][1] = (m[0][0] * c3 - m[0][1] * c1 + m[0][2] * c0) * invdet;
+    b.m[3][2] = (-m[3][0] * s3 + m[3][1] * s1 - m[3][2] * s0) * invdet;
+    b.m[3][3] = (m[2][0] * s3 - m[2][1] * s1 + m[2][2] * s0) * invdet;
     
     return b;
 }

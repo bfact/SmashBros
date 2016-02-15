@@ -4,7 +4,10 @@
 #include <iostream>
 #include <vector>
 #include <map>
+#include <queue>
+//#include <deque>
 #include <string>
+#include "Heap.h"
 #include "Vector3.h"
 #include "Vector4.h"
 #include "Matrix4.h"
@@ -12,6 +15,8 @@
 
 /* Forward Declarations */
 struct Face;
+struct VertexPair;
+class Heap;
 
 struct Vertex {
     Vector3* coordinate; // Coordinate for Vertex
@@ -22,9 +27,51 @@ struct Vertex {
     /* Quadric Error Metrics */
     // With each vertex, we associate the set of pairs of which it is a member
     
+    // Each Vertex keeps track of it's pairs
+    std::vector<VertexPair*>* localPairs = new std::vector<VertexPair*>();
+    
     Matrix4 Q;
+    float error;
+    
+    Vertex() {};
+    
+    Vertex(Vector3* coord, Matrix4 mat) {
+        coordinate = coord;
+        Q = mat;
+    }
 };
 
+struct VertexPair {
+    Vertex* a;
+    Vertex* b;
+    float error;
+    
+    Vertex* collapsedVertex;
+    
+    VertexPair(Vertex* v0, Vertex* v1) : a(v0), b(v1) {};
+    
+    // Compares if two VertexPairs have same points
+    bool equals(const VertexPair& rhs) {
+        if ((a == rhs.a && b == rhs.b) || (a == rhs.b && b == rhs.a)) {
+            return true;
+        }
+        return false;
+    }
+    
+    // Operators compare error values
+    inline bool operator==(const VertexPair& rhs) {
+        return error == rhs.error;
+    }
+    
+    inline bool operator>(const VertexPair& rhs) {
+        return error > rhs.error;
+    }
+    
+    inline bool operator<(const VertexPair& rhs) {
+        return error < rhs.error;
+    }
+    
+};
 
 /*
  * Each face contains 3 vertices, 3 edges, a face normal, and face adjacency
@@ -39,9 +86,6 @@ struct Face {
     //Vector4 p;
     Matrix4 K;
 };
-
-
-
 
 
 class Mesh : public Drawable
@@ -63,6 +107,9 @@ protected:
 
     std::vector<Vector3*>* normals;
     std::vector<Face*>* faces;
+    
+    // A Heap of VertexPairs
+    Heap* pairs;
     
     //Parse
     void parse(std::string&);
@@ -87,11 +134,19 @@ public:
     void computeKMatrix(Face*);
     void computeQMatrices();
     void computeQMatrix(Vertex*);
+    void findAllPairs();
+    void computePairCosts();
+    void computePairCost(VertexPair*);
     void buildConnectivity();
     bool checkDuplicateFaceAdj(Face*, Face*);
     bool checkDuplicateVertToVertAdj(Vertex*, Vertex*);
     
-    void edgeCollapse(Vertex*, Vertex*);
+    void quadricSimplification();
+    
+    void computeVertexErrors();
+    void computeVertexError(Vertex*);
+    
+    void edgeCollapseAtMidpoint(VertexPair*);
     
     virtual void draw(DrawData&);
     virtual void update(UpdateData&);

@@ -19,13 +19,10 @@
 #include "Window.h"
 #include "Matrix4.h"
 #include "Globals.h"
-#include "MathTestBench.h"
 
 
 int main(int argc, char *argv[])
 {
-    //Math Test Bench
-    MathTestBench::runTests();
     
     //GLUT and OpenGL Configuration
     glutInit(&argc, argv);                                      //Initialize GLUT

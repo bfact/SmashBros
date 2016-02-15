@@ -23,9 +23,11 @@ public:
     Matrix4(float, float, float, float, float, float, float, float, float, float, float, float, float, float, float, float);
     
     void set(float, float, float, float, float, float, float, float, float, float, float, float, float, float, float, float);
+    void setElement(int, int, float);
     float get(int,int);
     
     Matrix4& operator = (Matrix4);
+    
     
     float* ptr();
     

@@ -30,6 +30,7 @@ Mesh::Mesh(std::string filename) : Drawable()
     this->vertices = new std::vector<Vertex*>();
     this->normals = new std::vector<Vector3*>();
     this->faces = new std::vector<Face*>();
+    this->pairs = new Heap();
     //this->colors = new std::vector<Vector3*>();
     
     parse(filename);
@@ -40,6 +41,7 @@ Mesh::Mesh(std::string filename) : Drawable()
     Matrix4 setup;
     setup.makeScale((16.37 * tan)/halfSizeMAX);
     toWorld = setup.multiply(toWorld);
+    
 }
 
 Mesh::~Mesh()
@@ -202,6 +204,9 @@ void Mesh::parse(std::string& filename)
     computeVertexNormals();
     computeKMatrices();
     computeQMatrices();
+    computeVertexErrors();
+    findAllPairs();
+    computePairCosts();
 }
 
 /*
@@ -209,7 +214,7 @@ void Mesh::parse(std::string& filename)
  * to construct connectivity in our data structure
  */
 void Mesh::buildConnectivity() {
-    std::cout << "Building Connectivity" << std::endl;
+    //std::cout << "Building Connectivity" << std::endl;
     
     /*
      * Vertex->Face Adjacency
@@ -435,18 +440,18 @@ void Mesh::computeKMatrices() {
         Face* currFace = faces->at(i);
         computeKMatrix(currFace);
     }
+    std::cout << "Done Computing K Matrices" << std::endl;
 }
 
 void Mesh::computeKMatrix(Face* currFace) {
-    Vector3 negA = *vertices->at(currFace->vertexIndices[0])->coordinate;
-    negA = negA.scale(-1.0);
+    Vector3 A = *vertices->at(currFace->vertexIndices[0])->coordinate;
     Vector3 normal = *currFace->faceNormal;
     
     
     Vector4 p(currFace->faceNormal->get(0),
               currFace->faceNormal->get(1),
               currFace->faceNormal->get(2),
-              negA.dot(normal));
+              -(A.dot(normal)));
     
     float a = p.get(0);
     float b = p.get(1);
@@ -466,6 +471,7 @@ void Mesh::computeQMatrices() {
         Vertex* currVert = vertices->at(i);
         computeQMatrix(currVert);
     }
+    std::cout << "Done Computing Q Matrices" << std::endl;
 }
 
 void Mesh::computeQMatrix(Vertex* currVert) {
@@ -475,7 +481,102 @@ void Mesh::computeQMatrix(Vertex* currVert) {
     }
 }
 
-void Mesh::edgeCollapse(Vertex* v0, Vertex* v1) {
+
+void Mesh::computeVertexErrors() {
+    for (int i = 0; i < vertices->size(); i++) {
+        Vertex* currVert = vertices->at(i);
+        computeVertexError(currVert);
+        //std::cout << "Vertex Error: " << currVert->error << std::endl;
+    }
+    std::cout << "Done Computing Vertex Errors" << std::endl;
+}
+
+void Mesh::computeVertexError(Vertex* currVert) {
+    Vector4 v = currVert->coordinate->toVector4(1.0);
+    // error is vt*Q*v
+    Vector4 temp = currVert->Q * v;
+    currVert->error = v.dot(temp);
+}
+
+void Mesh::findAllPairs() {
+    // All edges are valid pairs
+    
+    std::cout << "Beginning Finding All Pairs" << std::endl;
+    for (int i = 0; i < vertices->size(); i++) {
+        //std::cout << "Finding Pairs" << std::endl;
+        Vertex* currVert = vertices->at(i);
+        for (int j = 0; j < currVert->vertToVertAdj->size(); j++) {
+            //std::cout << "Finding Pair" << std::endl;
+            VertexPair* currPair = new VertexPair(currVert, currVert->vertToVertAdj->at(j));
+            currVert->localPairs->push_back(currPair);
+        }
+    }
+    
+    std::cout << "Done finding Vertex Pairs" << std::endl;
+    
+    // TODO: Threshold Pairs
+}
+
+void Mesh::computePairCosts() {
+    for (int i = 0; i < vertices->size(); i++) {
+        Vertex* currVert = vertices->at(i);
+        for (int j = 0; j < currVert->localPairs->size(); j++) {
+            VertexPair* currPair = currVert->localPairs->at(j);
+            computePairCost(currPair);
+            pairs->insert(currPair); // insert into pairs heap
+        }
+        
+    }
+    std::cout << "Done Computing Pair Costs" << std::endl;
+}
+
+void Mesh::computePairCost(VertexPair* currPair) {
+    Matrix4 QSum = currPair->a->Q + currPair->b->Q;
+    
+    /* TODO: Fix Optimal Vertex Computation
+    
+    // Find optimal vertex location for pair
+    Matrix4 QSum = currPair->a->Q + currPair->b->Q;
+    Matrix4 QSumCopy = QSum;
+    Vector4 v(0, 0, 0, 1);
+    QSum.setElement(3, 0, 0);
+    QSum.setElement(3, 1, 0);
+    QSum.setElement(3, 2, 0);
+    QSum.setElement(3, 3, 1);
+    
+    Vector3* optimal = new Vector3((QSum.inverse() * v).toVector3());
+    Vertex* currVert = new Vertex(optimal, QSumCopy); */
+    Vector3* mid = new Vector3(((*currPair->a->coordinate) + (*currPair->b->coordinate)).scale(0.5));
+    Vertex* currVert = new Vertex(mid, QSum);
+    
+    computeVertexError(currVert);
+    currPair->collapsedVertex = currVert;
+    
+    /*
+    std::cerr << "Optimal Vertex Between " << std::endl;
+    currPair->a->coordinate->print("Vertex A");
+    std::cerr << " and " <<  std::endl;
+    currPair->b->coordinate->print("Vertex B");
+    std::cerr << " is " << std::endl;
+    optimal->print("Optimal"); */
+    
+    
+    
+    
+    
+    // Find error for optimal vertex
+}
+
+void Mesh::quadricSimplification() {
+    // Get min Pair from heap
+    VertexPair* currPair = pairs->GetMin();
+    edgeCollapseAtMidpoint(currPair);
+}
+
+// Midpoint by default, can specify other destination vertex
+void Mesh::edgeCollapseAtMidpoint(VertexPair* currPair) {
+    Vertex* v0 = currPair->a;
+    Vertex* v1 = currPair->b;
     Vector3 v0_pos = *v0->coordinate;
     Vector3 v1_pos = *v1->coordinate;
     
@@ -574,6 +675,13 @@ void Mesh::edgeCollapse(Vertex* v0, Vertex* v1) {
         
     // Update adjacent faces (call on mid vertex)
     findAdjFaces(midVert);
+    
+    
+    /* Updating the Pairs Heap */
+    for (int i = 0; i < pairs->size(); i++) {
+        
+    } 
+    
     
 }
 

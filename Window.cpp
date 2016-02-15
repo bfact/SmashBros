@@ -206,7 +206,7 @@ void Window::processNormalKeys(unsigned char key, int x, int y)
             Globals::colors = !Globals::colors;
             break;
         case 'd':
-            Globals::objdraw->edgeCollapse(Globals::objdraw->vertices->at(0), Globals::objdraw->vertices->at(1));
+            //Globals::objdraw->edgeCollapseAtMidpoint(Globals::objdraw->vertices->at(0), Globals::objdraw->vertices->at(1));
             break;
     }
 }
@@ -234,11 +234,11 @@ void Window::processSpecialKeys(int key, int x, int y)
     
     switch (key) {
         case GLUT_KEY_F1:    // armadillo
-            Globals::objdraw = Globals::armadillo;
+            //Globals::objdraw = Globals::armadillo;
             Globals::camera = Camera();
             break;
         case GLUT_KEY_F2:    // bunny
-            Globals::objdraw = Globals::teapot;
+            //Globals::objdraw = Globals::teapot;
             Globals::camera = Camera();
             break;
         case GLUT_KEY_F3:    // testpatch
@@ -246,8 +246,13 @@ void Window::processSpecialKeys(int key, int x, int y)
             Globals::camera = Camera();
             break;
         case GLUT_KEY_F4:    // plane
-            Globals::objdraw = Globals::plane;
+            //Globals::objdraw = Globals::plane;
             Globals::camera = Camera();
+            break;
+        case GLUT_KEY_DOWN:  // quadric simplification
+            Globals::objdraw->quadricSimplification();
+            break;
+        case GLUT_KEY_UP:    // progressive meshes
             break;
     }
   
