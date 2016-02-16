@@ -12,6 +12,8 @@
 #include <sstream>
 #include <fstream>
 
+using namespace std;
+
 #define deleteVector(__type__, __vect__) do {\
                                    std::vector<__type__>::iterator iter; \
                                    std::vector<__type__>::iterator end; \
@@ -55,6 +57,7 @@ Mesh::~Mesh()
     //deleteVector(Vector3*, colors);
 }
 
+
 void Mesh::draw(DrawData& data)
 {
     Face* face;
@@ -76,7 +79,7 @@ void Mesh::draw(DrawData& data)
     //      glVert(vertices->at(face.vertexIndices[0]))
     //      Etc.
     //
-    srand(1);
+    srand(2);
     
     for (int i = 0; i < faces->size(); i++) {
         face = faces->at(i);
@@ -167,6 +170,7 @@ void Mesh::parse(std::string& filename)
         
         Vertex* vert = new Vertex;
         vert->coordinate = new Vector3(x, y, z);
+        vert->valid = true;
         vertices->push_back(vert);
     }
     
@@ -205,8 +209,11 @@ void Mesh::parse(std::string& filename)
     computeKMatrices();
     computeQMatrices();
     computeVertexErrors();
+    
     findAllPairs();
     computePairCosts();
+    
+    meshStatus("/Users/seanwenzel/Github/SmashBros/initialization.txt");
 }
 
 /*
@@ -570,7 +577,13 @@ void Mesh::computePairCost(VertexPair* currPair) {
 void Mesh::quadricSimplification() {
     // Get min Pair from heap
     VertexPair* currPair = pairs->GetMin();
+    std::cerr << "Collapsing:" << std::endl;
+    currPair->a->coordinate->print("A");
+    currPair->b->coordinate->print("B");
+    std::cerr << "Error: " << currPair->error << std::endl;
     edgeCollapseAtMidpoint(currPair);
+    pairs->DeleteMin();
+    meshStatus("/Users/seanwenzel/Github/SmashBros/collapse.txt");
 }
 
 // Midpoint by default, can specify other destination vertex
@@ -579,6 +592,9 @@ void Mesh::edgeCollapseAtMidpoint(VertexPair* currPair) {
     Vertex* v1 = currPair->b;
     Vector3 v0_pos = *v0->coordinate;
     Vector3 v1_pos = *v1->coordinate;
+    
+    v0->valid = false;
+    v1->valid = false;
     
     Vector3 midpoint = (v0_pos + v1_pos).scale(0.5);
     int vertIndex = (int)vertices->size();
@@ -676,13 +692,138 @@ void Mesh::edgeCollapseAtMidpoint(VertexPair* currPair) {
     // Update adjacent faces (call on mid vertex)
     findAdjFaces(midVert);
     
+    midVert->valid = true;
+    midVert->Q = v0->Q + v1->Q;
     
     /* Updating the Pairs Heap */
-    for (int i = 0; i < pairs->size(); i++) {
-        
-    } 
+    for (int i = 0; i < v0->localPairs->size(); i++) {
+        VertexPair* currPair = v0->localPairs->at(i);
+        // change all pairs with v0 to v
+        // add pair to localPairs of midVert
+        currPair->replaceVertex(v0, midVert);
+        if (!midVert->checkPairDuplicate(currPair)) {
+            midVert->localPairs->push_back(currPair);
+        }
+    }
+    
+    for (int i = 0; i < v1->localPairs->size(); i++) {
+        VertexPair* currPair = v1->localPairs->at(i);
+        currPair->replaceVertex(v1, midVert);
+        if (!midVert->checkPairDuplicate(currPair)) {
+            midVert->localPairs->push_back(currPair);
+        }
+    }
     
     
+}
+
+void Vertex::printCoordinate(ofstream& oFile) {
+    oFile << "Coordinate: (" << coordinate->get(0) << ", " << coordinate->get(1) << ", " << coordinate->get(2) << ")";
+}
+void Vertex::printNormal(ofstream& oFile) {
+    oFile << "Vertex Normal: (" << vertexNormal->get(0) << ", " << vertexNormal->get(1) << ", " << vertexNormal->get(2) << ")" << endl;
+}
+void Vertex::printError(ofstream& oFile) {
+    oFile << "Vertex Error: " << error << endl;
+}
+void Vertex::printAdjVertices(ofstream& oFile) {
+    oFile << "Adjacent Vertices" << endl;
+    oFile << "# of Adjacent Vertices: " << vertToVertAdj->size() << endl;
+    for (int i = 0; i < vertToVertAdj->size(); i++) {
+        oFile << "Vertex #" << i << " | ";
+        vertToVertAdj->at(i)->printCoordinate(oFile);
+        oFile << endl;
+    }
+}
+void Vertex::printAdjFaces(ofstream& oFile, vector<Vertex*>* vertices) {
+    oFile << "Adjacent Faces" << endl;
+    oFile << "# of Adjacent Faces: " << vertToFaceAdj->size() << endl;
+    for (int i = 0; i < vertToFaceAdj->size(); i++) {
+        oFile << "Face #" << i << endl;
+        vertToFaceAdj->at(i)->printVertexCoordinates(oFile, vertices);
+    }
+}
+void Vertex::printPairs(ofstream& oFile) {
+    oFile << "Vertex Pairs" << endl;
+    oFile << "# of Vertex Pairs: " << localPairs->size() << endl;
+    for (int i = 0; i < localPairs->size(); i++) {
+        VertexPair* currPair = localPairs->at(i);
+        oFile << "Pair #" << i << " | ";
+        currPair->printVertexPair(oFile);
+    }
+}
+
+void VertexPair::printVertexPair(ofstream& oFile) {
+    oFile << "Vertex A: ";
+    a->printCoordinate(oFile);
+    oFile << " | Vertex B: ";
+    b->printCoordinate(oFile);
+    oFile << endl;
+    oFile << "\tPair Error: " << error << endl;
+
+
+}
+
+void Face::printVertexCoordinates(ofstream& oFile, std::vector<Vertex*>* vertices) {
+    for (int i = 0; i < 3; i++) {
+        oFile << "Vertex #" << i << " | ";
+        vertices->at(vertexIndices[i])->printCoordinate(oFile);
+        oFile << endl;
+    }
+}
+
+int Mesh::countValidVertices() {
+    int ctr = 0;
+    for (int i = 0; i < vertices->size(); i++) {
+        Vertex* currVert = vertices->at(i);
+        if (currVert->valid == true) {
+            ctr++;
+        }
+    }
+    return ctr;
+}
+
+void Mesh::meshStatus(string path) {
+    ofstream oFile;
+    oFile.open(path);
+    
+    oFile << "Vertices" << endl;
+    oFile << endl;
+    oFile << "Total # of Vertices: " << vertices->size() << endl;
+    oFile << "Valid # of Vertices: " << countValidVertices() << endl;
+    for (int i = 0; i < vertices->size(); i++) {
+        Vertex* currVert = vertices->at(i);
+        oFile << "vertices[" << i << "]:" << endl;
+        oFile << "------------" << endl;
+        currVert->printCoordinate(oFile);
+        oFile << endl;
+        oFile << endl;
+        currVert->printNormal(oFile);
+        oFile << endl;
+        currVert->printError(oFile);
+        oFile << endl;
+        currVert->printAdjVertices(oFile);
+        oFile << endl;
+        currVert->printAdjFaces(oFile, vertices);
+        oFile << endl;
+        currVert->printPairs(oFile);
+        oFile << endl;
+        VertexPair* currMinPair = pairs->GetMin();
+        oFile << "Current Min Pair" << endl;
+        currMinPair->printVertexPair(oFile);
+        oFile << endl;
+    }
+    oFile.close();
+}
+
+bool Vertex::checkPairDuplicate(VertexPair* pair) {
+    for (int i = 0; i < localPairs->size(); i++) {
+        VertexPair* currPair = localPairs->at(i);
+        if (currPair->equals(*pair)) {
+            return true;
+        }
+    }
+    return false;
 }
 
 void Mesh::getCenter()

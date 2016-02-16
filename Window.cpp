@@ -238,11 +238,11 @@ void Window::processSpecialKeys(int key, int x, int y)
             Globals::camera = Camera();
             break;
         case GLUT_KEY_F2:    // bunny
-            //Globals::objdraw = Globals::teapot;
+            Globals::objdraw = Globals::teapot;
             Globals::camera = Camera();
             break;
         case GLUT_KEY_F3:    // testpatch
-            Globals::objdraw = Globals::testpatch;
+            //Globals::objdraw = Globals::testpatch;
             Globals::camera = Camera();
             break;
         case GLUT_KEY_F4:    // plane
