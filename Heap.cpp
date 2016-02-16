@@ -38,12 +38,12 @@ void Heap::BubbleDown(int index)
     
     int minIndex = index;
     
-    if((*heapVector)[index] > (*heapVector)[leftChildIndex])
+    if(*((*heapVector)[index]) > *((*heapVector)[leftChildIndex]))
     {
         minIndex = leftChildIndex;
     }
     
-    if((rightChildIndex < length) && ((*heapVector)[minIndex] > (*heapVector)[rightChildIndex]))
+    if((rightChildIndex < length) && (*((*heapVector)[minIndex]) > *((*heapVector)[rightChildIndex])))
     {
         minIndex = rightChildIndex;
     }
@@ -65,7 +65,7 @@ void Heap::BubbleUp(int index)
     
     int parentIndex = (index-1)/2;
     
-    if((*heapVector)[parentIndex] > (*heapVector)[index])
+    if(*((*heapVector)[parentIndex]) > *((*heapVector)[index]))
     {
         VertexPair* temp = (*heapVector)[parentIndex];
         (*heapVector)[parentIndex] = (*heapVector)[index];
@@ -96,6 +96,7 @@ void Heap::insert(VertexPair* newPair)
 
 VertexPair* Heap::GetMin()
 {
+    Heapify();
     return (*heapVector)[0];
 }
 

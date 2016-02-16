@@ -74,6 +74,8 @@ public:
     bool checkDuplicateFaceAdj(Face*, Face*);
     bool checkDuplicateVertToVertAdj(Vertex*, Vertex*);
     
+    void updatePair(VertexPair*, Vertex*, Vertex*);
+    
     void quadricSimplification();
     
     void computeVertexErrors();
@@ -114,20 +116,31 @@ struct Vertex {
     Vector3* coordinate; // Coordinate for Vertex
     Vector3* vertexNormal;
     std::vector<Face*>* vertToFaceAdj = new std::vector<Face*>; // Vector of adjacent faces to this vertex
-    std::vector<Vertex*>* vertToVertAdj = new std::vector<Vertex*>;
+    
+    std::vector<Vertex*>* vertToVertAdj = new std::vector<Vertex*>; // change to indices
+    //std::vector<int>* vertToVertAdj = new std::vector<int>;
     
     bool valid;
+    int index;
+    
+    int parent1;
+    int parent2;
     
     /* Quadric Error Metrics */
     // With each vertex, we associate the set of pairs of which it is a member
     
     // Each Vertex keeps track of it's pairs
-    std::vector<VertexPair*>* localPairs = new std::vector<VertexPair*>();
+    std::vector<VertexPair*>* localPairs = new std::vector<VertexPair*>(); // change to indices
+    //std::vector<int>* localPairs = new std::vector<int>();
     
     Matrix4 Q;
     float error;
     
     Vertex() {};
+    
+    Vertex(Vector3* coord) {
+        coordinate = coord;
+    }
     
     Vertex(Vector3* coord, Matrix4 mat) {
         coordinate = coord;
@@ -143,6 +156,7 @@ struct Vertex {
     void printAdjVertices(ofstream&);
     void printAdjFaces(ofstream&, std::vector<Vertex*>*);
     void printPairs(ofstream&);
+    void printIndex(ofstream&);
 };
 
 struct VertexPair {
@@ -206,12 +220,14 @@ struct Face {
     int vertexIndices[3];
     Vector3* faceNormal;
     std::vector<Face*>* faceToFaceAdj = new std::vector<Face*>; // Vector of neighboring faces
+    bool valid;
     
     /* Quadric Error Metrics */
     //Vector4 p;
     Matrix4 K;
     
     void printVertexCoordinates(ofstream&, std::vector<Vertex*>*);
+    bool isDegenerate();
 };
 
 

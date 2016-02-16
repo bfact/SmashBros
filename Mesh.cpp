@@ -171,6 +171,9 @@ void Mesh::parse(std::string& filename)
         Vertex* vert = new Vertex;
         vert->coordinate = new Vector3(x, y, z);
         vert->valid = true;
+        vert->parent1 = -1;
+        vert->parent2 = -1;
+        vert->index = (int) vertices->size();
         vertices->push_back(vert);
     }
     
@@ -184,6 +187,8 @@ void Mesh::parse(std::string& filename)
         face->vertexIndices[0] = std::stoi(tokens.at(1));
         face->vertexIndices[1] = std::stoi(tokens.at(2));
         face->vertexIndices[2] = std::stoi(tokens.at(3));
+        
+        face->valid = 1;
         
         faces->push_back(face);
 
@@ -353,14 +358,27 @@ bool Mesh::checkAdjacent(Face* currFace, Face* adjFace)
 
 void Mesh::removeFace(Face* deadFace)
 {
-    for (int i = 0; i < deadFace->faceToFaceAdj->size(); i++) {
+    // Update faces that pointed to deadFace
+    for (int i = (int)deadFace->faceToFaceAdj->size()-1; i >= 0; i--) {
         Face* adjFace = deadFace->faceToFaceAdj->at(i);
         
-        for (int j = 0; j < adjFace->faceToFaceAdj->size(); j++) {
+        for (int j = (int)adjFace->faceToFaceAdj->size()-1; j >= 0; j--) {
             Face* removeFace = adjFace->faceToFaceAdj->at(j);
             
             if (removeFace == deadFace) {
                 adjFace->faceToFaceAdj->erase(adjFace->faceToFaceAdj->begin() + j);
+                break;
+            }
+        }
+    }
+    
+    // Update vertices that pointed to deadFace
+    for (int i = 0; i < 3; i++) {
+        Vertex* currVert = vertices->at(deadFace->vertexIndices[i]);
+        for (int j = (int)currVert->vertToFaceAdj->size() - 1; j >= 0; j--) {
+            Face* currFace = currVert->vertToFaceAdj->at(j);
+            if (currFace == deadFace) {
+                currVert->vertToFaceAdj->erase(currVert->vertToFaceAdj->begin() + j);
                 break;
             }
         }
@@ -557,6 +575,7 @@ void Mesh::computePairCost(VertexPair* currPair) {
     Vertex* currVert = new Vertex(mid, QSum);
     
     computeVertexError(currVert);
+    currPair->error = currVert->error;
     currPair->collapsedVertex = currVert;
     
     /*
@@ -596,63 +615,60 @@ void Mesh::edgeCollapseAtMidpoint(VertexPair* currPair) {
     v0->valid = false;
     v1->valid = false;
     
-    Vector3 midpoint = (v0_pos + v1_pos).scale(0.5);
+    Vector3* midpoint = new Vector3((v0_pos + v1_pos).scale(0.5));
     int vertIndex = (int)vertices->size();
     
-    Vertex* midVert = new Vertex;
-    midVert->coordinate = &midpoint;
+    Vertex* midVert = new Vertex(midpoint);
+    midVert->index = vertIndex;
+    midVert->parent1 = v0->index;
+    midVert->parent2 = v1->index;
     vertices->push_back(midVert);
     
     // Adjacent Faces for v0
     // Update vertex array of face to midpoint vertex
-    for (int i = 0; i < v0->vertToFaceAdj->size(); i++) {
+    for (int i = (int)v0->vertToFaceAdj->size()-1; i >= 0; i--) {
         Face* currFace = v0->vertToFaceAdj->at(i);
         for (int j = 0; j < 3; j++) {
             if (vertices->at(currFace->vertexIndices[j]) == v0) {
                 currFace->vertexIndices[j] = vertIndex;
+                if (currFace->isDegenerate()) {
+                    removeFace(currFace);
+                    v0->vertToFaceAdj->erase(v0->vertToFaceAdj->begin() + i);
+                }
             }
         }
     }
     
     // Adjacent Faces for v1
-    for (int i = 0; i < v1->vertToFaceAdj->size(); i++) {
+    for (int i = (int)v1->vertToFaceAdj->size()-1; i >= 0; i--) {
         Face* currFace = v1->vertToFaceAdj->at(i);
         for (int j = 0; j < 3; j++) {
-            /*
-            if (currFace->vertexIndices[j] == vertIndex)
-                continue; */
-            
             if (vertices->at(currFace->vertexIndices[j]) == v1) {
                 currFace->vertexIndices[j] = vertIndex;
+                if (currFace->isDegenerate()) {
+                    removeFace(currFace);
+                    v1->vertToFaceAdj->erase(v1->vertToFaceAdj->begin() + i);
+                }
             }
         }
     }
     
+    
     // Remove Degenerate Faces in v0's Face Adjacency
-    for (int i = 0; i < v0->vertToFaceAdj->size(); i++) {
+    for (int i = (int)v0->vertToFaceAdj->size()-1; i >= 0; i--) {
         Face* currFace = v0->vertToFaceAdj->at(i);
-        int i0 = currFace->vertexIndices[0];
-        int i1 = currFace->vertexIndices[1];
-        int i2 = currFace->vertexIndices[2];
-        
-        // If at least 2 of the above indices are equal, then the face is degenerate
-        if (i0 == i1 || i1 == i2 || i0 == i2) {
-            // TODO: Need FaceToFaceAdjacency
-            removeFace(currFace);
+        if (currFace->isDegenerate()) {
+            removeFace(currFace); // removes face from it's neighbor's adjacency
+            v0->vertToFaceAdj->erase(v0->vertToFaceAdj->begin() + i);
         }
     }
     
     // Remove Degenerate Faces in v1's Face Adjacency
-    for (int i = 0; i < v1->vertToFaceAdj->size(); i++) {
+    for (int i = (int)v1->vertToFaceAdj->size()-1; i >= 0; i--) {
         Face* currFace = v1->vertToFaceAdj->at(i);
-        int i0 = currFace->vertexIndices[0];
-        int i1 = currFace->vertexIndices[1];
-        int i2 = currFace->vertexIndices[2];
-        
-        // If at least 2 of the above indices are equal, then the face is degenerate
-        if (i0 == i1 || i1 == i2 || i0 == i2) {
-            // TODO: Need FaceToFaceAdjacency
+        if (currFace->isDegenerate()) {
             removeFace(currFace);
+            v1->vertToFaceAdj->erase(v1->vertToFaceAdj->begin() + i);
         }
     }
     
@@ -678,8 +694,58 @@ void Mesh::edgeCollapseAtMidpoint(VertexPair* currPair) {
         computeFaceNormal(currFace);
     }
     
+    // Update v0 and v1 vertToVertAdj
+    for (int i = (int)v0->vertToVertAdj->size() - 1; i >= 0; i--) {
+        Vertex* currVert = v0->vertToVertAdj->at(i);
+        for (int j = (int)currVert->vertToVertAdj->size()-1; j >= 0; j--) {
+            if (currVert->vertToVertAdj->at(j) == v0) {
+                if (!checkDuplicateVertToVertAdj(currVert, midVert)) {
+                    currVert->vertToVertAdj->at(j) = midVert;
+                }
+                else {
+                    // Delete currVert
+                    currVert->vertToVertAdj->erase(currVert->vertToVertAdj->begin() + j);
+                }
+                break;
+            }
+        }
+    }
+    
+    for (int i = (int)v1->vertToVertAdj->size() - 1; i >= 0; i--) {
+        Vertex* currVert = v1->vertToVertAdj->at(i);
+        for (int j = (int)currVert->vertToVertAdj->size()-1; j >= 0; j--) {
+            if (currVert->vertToVertAdj->at(j) == v1) {
+                if (!checkDuplicateVertToVertAdj(currVert, midVert)) {
+                    currVert->vertToVertAdj->at(j) = midVert;
+                    break;
+                }
+                else {
+                    // Delete currVert
+                    currVert->vertToVertAdj->erase(currVert->vertToVertAdj->begin() + j);
+                }
+            }
+        }
+    }
+    
+    // Construct VertToVertAdj2
+    for (int i = 0; i < v0->vertToVertAdj->size(); i++) {
+        Vertex* currVert = v0->vertToVertAdj->at(i);
+        if (!checkDuplicateVertToVertAdj(midVert, currVert) && (currVert != midVert) &&
+            currVert->valid == true) {
+            midVert->vertToVertAdj->push_back(currVert);
+        }
+    }
+    
+    for (int i = 0; i < v1->vertToVertAdj->size(); i++) {
+        Vertex* currVert = v1->vertToVertAdj->at(i);
+        if (!checkDuplicateVertToVertAdj(midVert, currVert) && (currVert != midVert) &&
+            currVert->valid == true) {
+            midVert->vertToVertAdj->push_back(currVert);
+        }
+    }
+    
     // Construct VertToVertAdj for midVert
-    findAdjVertices(midVert);
+    //findAdjVertices(midVert);
     // Calculate vertex normal for midVert
     computeVertexNormal(midVert);
     
@@ -698,23 +764,76 @@ void Mesh::edgeCollapseAtMidpoint(VertexPair* currPair) {
     /* Updating the Pairs Heap */
     for (int i = 0; i < v0->localPairs->size(); i++) {
         VertexPair* currPair = v0->localPairs->at(i);
-        // change all pairs with v0 to v
-        // add pair to localPairs of midVert
-        currPair->replaceVertex(v0, midVert);
-        if (!midVert->checkPairDuplicate(currPair)) {
-            midVert->localPairs->push_back(currPair);
-        }
+        updatePair(currPair, v0, midVert);
     }
     
     for (int i = 0; i < v1->localPairs->size(); i++) {
         VertexPair* currPair = v1->localPairs->at(i);
-        currPair->replaceVertex(v1, midVert);
-        if (!midVert->checkPairDuplicate(currPair)) {
-            midVert->localPairs->push_back(currPair);
-        }
+        updatePair(currPair, v1, midVert);
     }
     
+    // Compute new errors for relevant pairs
+    for (int i = 0; i < midVert->localPairs->size(); i++) {
+        VertexPair* currPair = midVert->localPairs->at(i);
+        computePairCost(currPair);
+    }
+}
+
+void Mesh::updatePair(VertexPair* currPair, Vertex* oldVert, Vertex* newVert) {
+    //currPair->replaceVertex(oldVert, newVert);
     
+    // Get corresponding pair to currPair
+    Vertex* otherVert;
+    if (currPair->a == oldVert) {
+        otherVert = currPair->b;
+    }
+    else if (currPair->b == oldVert) {
+        otherVert = currPair->a;
+    }
+    else {
+        std::cerr << "Error finding corresponding Vertex" << std::endl;
+        return;
+    }
+    for (int i = (int)otherVert->localPairs->size()-1; i >= 0; i--) {
+        VertexPair* otherPair = otherVert->localPairs->at(i);
+        if (otherPair->equals(*currPair)) {
+            // Have both pairs now
+            currPair->replaceVertex(oldVert, newVert);
+            if (currPair->a->valid == true && currPair->b->valid == true &&
+                !newVert->checkPairDuplicate(currPair)) {
+                newVert->localPairs->push_back(currPair);
+            }
+            
+            otherPair->replaceVertex(oldVert, newVert);
+            // Check for and delete duplicates
+            bool flag = true;
+            for (int j = (int)otherVert->localPairs->size()-1; j >= 0; j--) {
+                VertexPair* pair = otherVert->localPairs->at(j);
+                if (pair->equals(*otherPair)) {
+                    // Don't delete if only one
+                    if (flag) {
+                        flag = false;
+                        continue;
+                    }
+                    else {
+                        otherVert->localPairs->erase(otherVert->localPairs->begin() + j);
+                    }
+                }
+            }
+            
+            return;
+            
+        }
+    }
+}
+
+bool Face::isDegenerate() {
+    if (vertexIndices[0] == vertexIndices[1] ||
+        vertexIndices[1] == vertexIndices[2] ||
+        vertexIndices[0] == vertexIndices[2]) {
+        return true;
+    }
+    return false;
 }
 
 void Vertex::printCoordinate(ofstream& oFile) {
@@ -731,6 +850,8 @@ void Vertex::printAdjVertices(ofstream& oFile) {
     oFile << "# of Adjacent Vertices: " << vertToVertAdj->size() << endl;
     for (int i = 0; i < vertToVertAdj->size(); i++) {
         oFile << "Vertex #" << i << " | ";
+        vertToVertAdj->at(i)->printIndex(oFile);
+        oFile << " | ";
         vertToVertAdj->at(i)->printCoordinate(oFile);
         oFile << endl;
     }
@@ -753,10 +874,18 @@ void Vertex::printPairs(ofstream& oFile) {
     }
 }
 
+void Vertex::printIndex(ofstream& oFile) {
+    oFile << "Index: " << index;
+}
+
 void VertexPair::printVertexPair(ofstream& oFile) {
     oFile << "Vertex A: ";
+    a->printIndex(oFile);
+    oFile << " | ";
     a->printCoordinate(oFile);
     oFile << " | Vertex B: ";
+    b->printIndex(oFile);
+    oFile << " | ";
     b->printCoordinate(oFile);
     oFile << endl;
     oFile << "\tPair Error: " << error << endl;
@@ -766,7 +895,7 @@ void VertexPair::printVertexPair(ofstream& oFile) {
 
 void Face::printVertexCoordinates(ofstream& oFile, std::vector<Vertex*>* vertices) {
     for (int i = 0; i < 3; i++) {
-        oFile << "Vertex #" << i << " | ";
+        oFile << "Vertex #" << i << " | Index: " << vertexIndices[i] << " | ";
         vertices->at(vertexIndices[i])->printCoordinate(oFile);
         oFile << endl;
     }
@@ -795,6 +924,9 @@ void Mesh::meshStatus(string path) {
         Vertex* currVert = vertices->at(i);
         oFile << "vertices[" << i << "]:" << endl;
         oFile << "------------" << endl;
+        oFile << "Valid: " << currVert->valid << endl;
+        oFile << "Parents: " << currVert->parent1 << ", " << currVert->parent2 << endl;
+        oFile << endl;
         currVert->printCoordinate(oFile);
         oFile << endl;
         oFile << endl;
@@ -808,11 +940,23 @@ void Mesh::meshStatus(string path) {
         oFile << endl;
         currVert->printPairs(oFile);
         oFile << endl;
-        VertexPair* currMinPair = pairs->GetMin();
-        oFile << "Current Min Pair" << endl;
-        currMinPair->printVertexPair(oFile);
-        oFile << endl;
     }
+    
+    oFile << "Heap" << endl;
+    oFile << endl;
+    oFile << "Total # of Pairs: " << pairs->size() << endl;
+    for (int i = 0; i < pairs->size(); i++) {
+        VertexPair* currPair = pairs->at(i);
+        oFile << "Pair #" << i << endl;
+        currPair->printVertexPair(oFile);
+    }
+    oFile << endl;
+    
+    
+    VertexPair* currMinPair = pairs->GetMin();
+    oFile << "Current Min Pair" << endl;
+    currMinPair->printVertexPair(oFile);
+    oFile << endl;
     oFile.close();
 }
 
