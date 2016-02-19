@@ -5,8 +5,9 @@
 #include <vector>
 #include <map>
 #include <queue>
-//#include <deque>
+#include <deque>
 #include <string>
+#include <stack>
 #include "Heap.h"
 #include "Vector3.h"
 #include "Vector4.h"
@@ -37,7 +38,7 @@ protected:
     float centerZ = 0;
     
     //Storage vectors
-
+    
     std::vector<Vector3*>* normals;
     std::vector<Face*>* faces;
     
@@ -56,9 +57,12 @@ public:
     
     Mesh(std::string);
     virtual ~Mesh(void);
-
+    
     std::vector<Vertex*>* vertices;
-        
+    
+    // Progressive Mesh
+    std::stack<Vertex*> vSplitStack;
+    
     void computeFaceNormals();
     void computeFaceNormal(Face*);
     void computeVertexNormals();
@@ -110,7 +114,12 @@ public:
     // Given vertex, find neighboring vertices
     // Given edge, find vertices and faces it touches
     
+    void edgeCollapse(Vertex *v0, Vertex *v1);
+    void vertexSplit(Vertex*);
+    void progressiveMesh(void);
+    
 };
+
 
 struct Vertex {
     Vector3* coordinate; // Coordinate for Vertex

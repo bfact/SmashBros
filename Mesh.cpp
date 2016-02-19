@@ -1,9 +1,9 @@
 #include "Mesh.h"
 
 #ifdef __APPLE__
-    #include <GLUT/glut.h>
+#include <GLUT/glut.h>
 #else
-    #include <GL/glut.h>
+#include <GL/glut.h>
 #endif
 
 #include "Window.h"
@@ -15,13 +15,13 @@
 using namespace std;
 
 #define deleteVector(__type__, __vect__) do {\
-                                   std::vector<__type__>::iterator iter; \
-                                   std::vector<__type__>::iterator end; \
-                                   iter = __vect__->begin();\
-                                   end = __vect__->end();\
-                                   while(iter != end) delete (*(iter++));\
-                                   delete __vect__;\
-                               } while(false)
+std::vector<__type__>::iterator iter; \
+std::vector<__type__>::iterator end; \
+iter = __vect__->begin();\
+end = __vect__->end();\
+while(iter != end) delete (*(iter++));\
+delete __vect__;\
+} while(false)
 
 // Forward Declaration of Helper Methods
 std::vector<std::string>& split(const std::string &s, char delim, std::vector<std::string> &elems);
@@ -55,6 +55,12 @@ Mesh::~Mesh()
     deleteVector(Face*, faces);
     //deleteVector(Edge*, edges);
     //deleteVector(Vector3*, colors);
+    
+    // don't know if we need to delete 
+    while ( !vSplitStack.empty() )
+    {
+        vSplitStack.pop();
+    }
 }
 
 
@@ -94,10 +100,10 @@ void Mesh::draw(DrawData& data)
             Vertex* v  = vertices->at(face->vertexIndices[j]);
             glNormal3f(v->vertexNormal->get(0), v->vertexNormal->get(1), v->vertexNormal->get(2));
             glVertex3f(v->coordinate->get(0), v->coordinate->get(1), v->coordinate->get(2));
-
+            
         }
     }
-
+    
     
     glEnd();
     
@@ -183,7 +189,7 @@ void Mesh::parse(std::string& filename)
         tokens = split(line, ' ', tokens);
         
         Face* face = new Face;
-
+        
         face->vertexIndices[0] = std::stoi(tokens.at(1));
         face->vertexIndices[1] = std::stoi(tokens.at(2));
         face->vertexIndices[2] = std::stoi(tokens.at(3));
@@ -191,7 +197,7 @@ void Mesh::parse(std::string& filename)
         face->valid = 1;
         
         faces->push_back(face);
-
+        
     }
     
     std::cout << "Done parsing: " << filename << std::endl;
@@ -247,7 +253,7 @@ void Mesh::buildConnectivity() {
      *      have 2 vertices in common.
      *
      * Pseudocode Outline:
-     * 
+     *
      *      For each face:
      *          For each of its vertices:
      *              Loop through vertex's vertToFaceAdj:
@@ -309,7 +315,7 @@ void Mesh::findAdjVertices(Vertex* currVert) {
             }
         }
     }
-
+    
 }
 
 // Call on midpoint
@@ -417,7 +423,7 @@ bool Mesh::checkDuplicateVertToVertAdj(Vertex* v0, Vertex* v1) {
         }
     }
     return false;
-} 
+}
 
 
 void Mesh::computeFaceNormals() {
@@ -559,18 +565,18 @@ void Mesh::computePairCost(VertexPair* currPair) {
     Matrix4 QSum = currPair->a->Q + currPair->b->Q;
     
     /* TODO: Fix Optimal Vertex Computation
-    
-    // Find optimal vertex location for pair
-    Matrix4 QSum = currPair->a->Q + currPair->b->Q;
-    Matrix4 QSumCopy = QSum;
-    Vector4 v(0, 0, 0, 1);
-    QSum.setElement(3, 0, 0);
-    QSum.setElement(3, 1, 0);
-    QSum.setElement(3, 2, 0);
-    QSum.setElement(3, 3, 1);
-    
-    Vector3* optimal = new Vector3((QSum.inverse() * v).toVector3());
-    Vertex* currVert = new Vertex(optimal, QSumCopy); */
+     
+     // Find optimal vertex location for pair
+     Matrix4 QSum = currPair->a->Q + currPair->b->Q;
+     Matrix4 QSumCopy = QSum;
+     Vector4 v(0, 0, 0, 1);
+     QSum.setElement(3, 0, 0);
+     QSum.setElement(3, 1, 0);
+     QSum.setElement(3, 2, 0);
+     QSum.setElement(3, 3, 1);
+     
+     Vector3* optimal = new Vector3((QSum.inverse() * v).toVector3());
+     Vertex* currVert = new Vertex(optimal, QSumCopy); */
     Vector3* mid = new Vector3(((*currPair->a->coordinate) + (*currPair->b->coordinate)).scale(0.5));
     Vertex* currVert = new Vertex(mid, QSum);
     
@@ -579,12 +585,12 @@ void Mesh::computePairCost(VertexPair* currPair) {
     currPair->collapsedVertex = currVert;
     
     /*
-    std::cerr << "Optimal Vertex Between " << std::endl;
-    currPair->a->coordinate->print("Vertex A");
-    std::cerr << " and " <<  std::endl;
-    currPair->b->coordinate->print("Vertex B");
-    std::cerr << " is " << std::endl;
-    optimal->print("Optimal"); */
+     std::cerr << "Optimal Vertex Between " << std::endl;
+     currPair->a->coordinate->print("Vertex A");
+     std::cerr << " and " <<  std::endl;
+     currPair->b->coordinate->print("Vertex B");
+     std::cerr << " is " << std::endl;
+     optimal->print("Optimal"); */
     
     
     
@@ -595,7 +601,16 @@ void Mesh::computePairCost(VertexPair* currPair) {
 
 void Mesh::quadricSimplification() {
     // Get min Pair from heap
-    VertexPair* currPair = pairs->GetMin();
+    VertexPair* currPair;
+    while (1) {
+        currPair = pairs->GetMin();
+        if (currPair->a->valid == 1 && currPair->b->valid == 1) {
+            break;
+        }
+        else {
+            pairs->DeleteMin();
+        }
+    }
     std::cerr << "Collapsing:" << std::endl;
     currPair->a->coordinate->print("A");
     currPair->b->coordinate->print("B");
@@ -754,7 +769,7 @@ void Mesh::edgeCollapseAtMidpoint(VertexPair* currPair) {
         Vertex* currVert = midVert->vertToVertAdj->at(i);
         computeVertexNormal(currVert);
     }
-        
+    
     // Update adjacent faces (call on mid vertex)
     findAdjFaces(midVert);
     
@@ -777,6 +792,9 @@ void Mesh::edgeCollapseAtMidpoint(VertexPair* currPair) {
         VertexPair* currPair = midVert->localPairs->at(i);
         computePairCost(currPair);
     }
+    
+    
+    vSplitStack.push(midVert);
 }
 
 void Mesh::updatePair(VertexPair* currPair, Vertex* oldVert, Vertex* newVert) {
@@ -799,12 +817,8 @@ void Mesh::updatePair(VertexPair* currPair, Vertex* oldVert, Vertex* newVert) {
         if (otherPair->equals(*currPair)) {
             // Have both pairs now
             currPair->replaceVertex(oldVert, newVert);
-            if (currPair->a->valid == true && currPair->b->valid == true &&
-                !newVert->checkPairDuplicate(currPair)) {
-                newVert->localPairs->push_back(currPair);
-            }
-            
             otherPair->replaceVertex(oldVert, newVert);
+            
             // Check for and delete duplicates
             bool flag = true;
             for (int j = (int)otherVert->localPairs->size()-1; j >= 0; j--) {
@@ -813,12 +827,17 @@ void Mesh::updatePair(VertexPair* currPair, Vertex* oldVert, Vertex* newVert) {
                     // Don't delete if only one
                     if (flag) {
                         flag = false;
-                        continue;
+                        //continue;
                     }
                     else {
                         otherVert->localPairs->erase(otherVert->localPairs->begin() + j);
                     }
                 }
+            }
+            
+            if (currPair->a->valid == true && currPair->b->valid == true &&
+                !newVert->checkPairDuplicate(currPair)) {
+                newVert->localPairs->push_back(currPair);
             }
             
             return;
@@ -889,8 +908,8 @@ void VertexPair::printVertexPair(ofstream& oFile) {
     b->printCoordinate(oFile);
     oFile << endl;
     oFile << "\tPair Error: " << error << endl;
-
-
+    
+    
 }
 
 void Face::printVertexCoordinates(ofstream& oFile, std::vector<Vertex*>* vertices) {
@@ -968,6 +987,150 @@ bool Vertex::checkPairDuplicate(VertexPair* pair) {
         }
     }
     return false;
+}
+
+void Mesh::progressiveMesh()
+{
+    if (vSplitStack.empty() == true) {
+        return;
+    }
+    
+    Vertex* vertToRemove = vSplitStack.top();
+    vSplitStack.pop();
+    vertexSplit(vertToRemove);
+    
+}
+
+
+void Mesh::vertexSplit(Vertex *vertToRemove)
+{   
+    int v0 = vertToRemove->parent1;
+    int v1 = vertToRemove->parent2;
+    
+    Vertex* vertToAdd0 = vertices->at(v0);
+    Vertex* vertToAdd1 = vertices->at(v1);
+    
+    // Update adjacent faces of v0 & v1:
+    // If adj face points to orig vert
+    // Replace vertex with v0/v1
+    
+    for (int i = (int)vertToAdd0->vertToFaceAdj->size()-1; i >= 0; i--) {
+        Face* currFace = vertToAdd0->vertToFaceAdj->at(i);
+        
+        for (int j = 0; j < 3; j++) {
+            if (vertices->at(currFace->vertexIndices[j])->index == vertToRemove->index) {
+                currFace->vertexIndices[j] = v0;
+                //printf("\t\t\t something happened. \n");
+                //printf("\t\t Curr Face %d\n", currFace->vertexIndices[j]);
+                //printf("\t\t Vertices %d\n", vertices->at(currFace->vertexIndices[j])->index);
+            }
+        }
+    }
+    
+    for (int i = (int)vertToAdd1->vertToFaceAdj->size()-1; i >= 0; i--) {
+        Face* currFace = vertToAdd1->vertToFaceAdj->at(i);
+        
+        for (int j = 0; j < 3; j++) {
+            if (vertices->at(currFace->vertexIndices[j])->index == vertToRemove->index) {
+                currFace->vertexIndices[j] = v1;
+                //printf("\t\t\t something happened. \n");
+                //printf("\t\t Curr Face %d\n", currFace->vertexIndices[j]);
+                //printf("\t\t Vertices %d\n", vertices->at(currFace->vertexIndices[j])->index);
+            }
+        }
+    }
+    
+    // Create faces:
+    // If v0 and v1 share an adj vert,
+    // Create a face to fill in the gap
+    
+    int facesAdded = 0;
+    
+    for (int i = (int)vertToAdd0->vertToVertAdj->size()-1; i >= 0; i--) {
+        Vertex* currVert = vertToAdd0->vertToVertAdj->at(i);
+        
+        for (int j = (int)vertToAdd1->vertToVertAdj->size()-1; j >= 0; j--) {
+            Vertex* adjVert = vertToAdd1->vertToVertAdj->at(j);
+            
+            if (currVert == adjVert) {
+                
+                //printf("\t\t Found an adjacent vert\n");
+                
+                Face *newFace = new Face;
+                newFace->vertexIndices[0] = currVert->index;
+                newFace->vertexIndices[1] = vertToAdd0->index;
+                newFace->vertexIndices[2] = vertToAdd1->index;
+                
+                // Add new faces to vert to face adj
+                vertToAdd0->vertToFaceAdj->push_back(newFace);
+                vertToAdd1->vertToFaceAdj->push_back(newFace);
+                
+                faces->push_back(newFace);
+                
+                facesAdded++;
+                
+                //printf("\tFaces added %d\n", facesAdded);
+            }
+        }
+    }
+    
+    // Recalculate face normals
+    for (int i = 0; i < vertToAdd0->vertToFaceAdj->size(); i++) {
+        Face* currFace = vertToAdd0->vertToFaceAdj->at(i);
+        computeFaceNormal(currFace);
+    }
+    
+    for (int i = 0; i < vertToAdd1->vertToFaceAdj->size(); i++) {
+        Face* currFace = vertToAdd1->vertToFaceAdj->at(i);
+        computeFaceNormal(currFace);
+    }
+
+    // Remove original vertex from vert to vert adj
+    // and add v0 and v1 to them
+    for (int i = 0; i < vertToRemove->vertToVertAdj->size(); i++) {
+        Vertex* currVertex = vertToRemove->vertToVertAdj->at(i);
+        
+        for (int j = 0; j < currVertex->vertToVertAdj->size(); j++) {
+            Vertex* v = currVertex->vertToVertAdj->at(j);
+            if (v == vertToRemove) {
+                currVertex->vertToVertAdj->erase(currVertex->vertToVertAdj->begin() + j);
+                findAdjVertices(currVertex);
+                break;
+            }
+        }
+    }
+    
+    // Update adjacencies
+    // Add to neighboring faces/vertices
+    // JK DO NOT TOUCH ORIGINAL VERTICE STUFF
+    // THEY SHOULD STILL HAVE ADJ FACES AND VERTICES
+    // BESIDES THE DEGENERATE FACES. WHICH WE ALREADY
+    // ADDED TO THEIR ADJ LIST WHEN WE RECONSTRUCTED THE FACE
+    //findAdjFaces(vertToAdd0);
+    //findAdjFaces(vertToAdd1);
+    //findAdjVertices(vertToAdd0);
+    //findAdjVertices(vertToAdd1);
+    
+    // Update normals of vertices
+    // JK DO NOT TOUCH ORIGINAL VERTICE STUFF
+    //computeVertexNormal(vertToAdd0);
+    //computeVertexNormal(vertToAdd1);
+    
+    // Update normals of neighboring faces/vertices
+    /*
+    for (int i = 0; i < vertToAdd0->vertToVertAdj->size(); i++) {
+        Vertex* currVert = vertToAdd0->vertToVertAdj->at(i);
+        computeVertexNormal(currVert);
+    }
+    
+    for (int i = 0; i < vertToAdd1->vertToVertAdj->size(); i++) {
+        Vertex* currVert = vertToAdd1->vertToVertAdj->at(i);
+        computeVertexNormal(currVert);
+    }*/
+    
+    VertexPair* newPair = new VertexPair(vertToAdd0, vertToAdd1);
+    vertToRemove->localPairs->push_back(newPair);
+    
 }
 
 void Mesh::getCenter()

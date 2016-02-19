@@ -35,27 +35,6 @@ void Window::initialize(void)
     Vector4 lightPos(0.0, 10.0, 15.0, 1.0);
     Globals::light.position = lightPos;
     Globals::light.quadraticAttenuation = 0.02;
-
-    
-    //Setup size
-    //float tan = (30/180.0) * M_PI;
-    /*
-    Matrix4 setup;
-    setup.makeScale((16.37 * tan)/Globals::objdraw->halfSizeMAX);
-    Globals::objdraw->toWorld = setup.multiply(Globals::objdraw->toWorld);
-    */
-    
-    /*
-    Matrix4 setupD;
-    setupD.makeScale((20 * tan)/Globals::objdraw->halfSizeMAX);
-    Globals::objdraw->toWorld = setupD.multiply(Globals::objdraw->toWorld);
-    */
-    
-    /*
-    Matrix4 setupBE;
-    setupBE.makeScale((19.85 * tan)/Globals::bear.halfSizeMAX);
-    Globals::bear.toWorld = setupBE.multiply(Globals::bear.toWorld);
-     */
     
 }
 
@@ -192,6 +171,7 @@ void Window::processNormalKeys(unsigned char key, int x, int y)
             Globals::objdraw->toWorld = m.multiply(Globals::objdraw->toWorld);
             displayPosition();
             break;
+            
         case 'f':   // toggle flat shading on and off
             if (Globals::flatShading) {
                 Globals::flatShading = false;
@@ -202,11 +182,21 @@ void Window::processNormalKeys(unsigned char key, int x, int y)
                 glShadeModel(GL_FLAT);
             }
             break;
+            
         case 'c':
             Globals::colors = !Globals::colors;
             break;
+            
         case 'd':
-            //Globals::objdraw->edgeCollapseAtMidpoint(Globals::objdraw->vertices->at(0), Globals::objdraw->vertices->at(1));
+            std::cout << "\nBegin edge collapse" << std::endl;
+            Globals::objdraw->edgeCollapse(Globals::objdraw->vertices->at(0), Globals::objdraw->vertices->at(1));
+            std::cout << "End edge collapse" << std::endl;
+            break;
+        case 'p':
+            std::cout << "\nBegin edge expansion" << std::endl;
+            //Globals::objdraw->vertexSplit(Globals::objdraw->vertices->at(0));
+            Globals::objdraw->progressiveMesh();
+            std::cout << "End edge expansion" << std::endl;
             break;
     }
 }
@@ -234,11 +224,11 @@ void Window::processSpecialKeys(int key, int x, int y)
     
     switch (key) {
         case GLUT_KEY_F1:    // armadillo
-            //Globals::objdraw = Globals::armadillo;
+//            Globals::objdraw = Globals::armadillo;
             Globals::camera = Camera();
             break;
         case GLUT_KEY_F2:    // bunny
-            //Globals::objdraw = Globals::teapot;
+            Globals::objdraw = Globals::teapot;
             Globals::camera = Camera();
             break;
         case GLUT_KEY_F3:    // testpatch
@@ -253,6 +243,7 @@ void Window::processSpecialKeys(int key, int x, int y)
             Globals::objdraw->quadricSimplification();
             break;
         case GLUT_KEY_UP:    // progressive meshes
+            Globals::objdraw->progressiveMesh();
             break;
     }
   
@@ -263,6 +254,7 @@ void Window::processSpecialKeys(int key, int x, int y)
 
 void Window::processMouse(int button, int state, int x, int y)
 {
+    
     //Detect the left-button of the mouse being depressed
     if (button == GLUT_LEFT_BUTTON && glutGetModifiers() == GLUT_ACTIVE_CTRL) {         // right mouse -- x/y trans
         lastPoint = Vector3(x, y, 0);
@@ -274,8 +266,7 @@ void Window::processMouse(int button, int state, int x, int y)
             lastPoint = trackBallMapping(x, y);
             Movement = button;
     }
-    
-
+     
 }
 
 //TODO: Mouse Motion callbacks!
@@ -288,7 +279,7 @@ void Window::processMouseActiveMotion(int x, int y)
     
     switch (Movement) {
         case GLUT_LEFT_BUTTON: {   // rotation
-            std::cout << "GLU LEFT BUTTON" << std::endl;
+            //std::cout << "GLU LEFT BUTTON" << std::endl;
             currPoint = trackBallMapping(x, y); //map mouse to logical sphere location
             currPoint = currPoint.normalize();
             lastPoint = lastPoint.normalize();
@@ -304,13 +295,13 @@ void Window::processMouseActiveMotion(int x, int y)
                 lol.makeRotateArbitrary(rotAxis, rotAngle);
                 if (source == 0) {
                     Globals::objdraw->toWorld = lol.multiply(Globals::objdraw->toWorld);
-                    displayPosition();
+                    //displayPosition();
                 } 
             }
             break;
         }
         case GLUT_RIGHT_BUTTON: {   // x/y translation
-            std::cout << "GLU RIGHT BUTTON" << std::endl;
+            //std::cout << "GLU RIGHT BUTTON" << std::endl;
             currPoint = Vector3(x, y, 0);
             direction.set((currPoint[0] - lastPoint[0]) *  0.001,
                           (currPoint[1] - lastPoint[1]) * -0.001, 0);
@@ -319,23 +310,24 @@ void Window::processMouseActiveMotion(int x, int y)
             lol.makeTranslate(direction);
             if (source == 0) {
                 Globals::objdraw->toWorld = lol.multiply(Globals::objdraw->toWorld);
-                displayPosition();
+               // displayPosition();
             }
             
             break;
         }
-        case 3:     // mouse wheel -- scale
-            std::cout << "MOUSE WHEEL" << std::endl;
+        case 3:    { // mouse wheel -- scale
+            // std::cout << "MOUSE WHEEL" << std::endl;
             currPoint = Vector3(x, y, 0);
             direction.set(0, 0, (currPoint[1] - lastPoint[1]) * -0.001);
             Matrix4 lol;
             lol.makeTranslate(direction);
             if (source == 0) {
                 Globals::objdraw->toWorld = lol.multiply(Globals::objdraw->toWorld);
-                displayPosition();
+                // displayPosition();
             }
 
             break;
+        }
             
     }
 }
