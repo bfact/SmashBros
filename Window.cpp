@@ -238,7 +238,7 @@ void Window::processSpecialKeys(int key, int x, int y)
             Globals::camera = Camera();
             break;
         case GLUT_KEY_F2:    // bunny
-            //Globals::objdraw = Globals::teapot;
+            Globals::objdraw = Globals::teapot;
             Globals::camera = Camera();
             break;
         case GLUT_KEY_F3:    // testpatch
@@ -246,7 +246,7 @@ void Window::processSpecialKeys(int key, int x, int y)
             Globals::camera = Camera();
             break;
         case GLUT_KEY_F4:    // plane
-            Globals::objdraw = Globals::plane;
+            //Globals::objdraw = Globals::plane;
             Globals::camera = Camera();
             break;
         case GLUT_KEY_DOWN:  // quadric simplification

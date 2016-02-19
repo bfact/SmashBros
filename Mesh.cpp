@@ -595,7 +595,16 @@ void Mesh::computePairCost(VertexPair* currPair) {
 
 void Mesh::quadricSimplification() {
     // Get min Pair from heap
-    VertexPair* currPair = pairs->GetMin();
+    VertexPair* currPair;
+    while (1) {
+        currPair = pairs->GetMin();
+        if (currPair->a->valid == 1 && currPair->b->valid == 1) {
+            break;
+        }
+        else {
+            pairs->DeleteMin();
+        }
+    }
     std::cerr << "Collapsing:" << std::endl;
     currPair->a->coordinate->print("A");
     currPair->b->coordinate->print("B");
@@ -623,6 +632,7 @@ void Mesh::edgeCollapseAtMidpoint(VertexPair* currPair) {
     midVert->parent1 = v0->index;
     midVert->parent2 = v1->index;
     vertices->push_back(midVert);
+    
     
     // Adjacent Faces for v0
     // Update vertex array of face to midpoint vertex
@@ -653,7 +663,7 @@ void Mesh::edgeCollapseAtMidpoint(VertexPair* currPair) {
         }
     }
     
-    
+    /*
     // Remove Degenerate Faces in v0's Face Adjacency
     for (int i = (int)v0->vertToFaceAdj->size()-1; i >= 0; i--) {
         Face* currFace = v0->vertToFaceAdj->at(i);
@@ -670,7 +680,7 @@ void Mesh::edgeCollapseAtMidpoint(VertexPair* currPair) {
             removeFace(currFace);
             v1->vertToFaceAdj->erase(v1->vertToFaceAdj->begin() + i);
         }
-    }
+    } */
     
     // Create midpoint vertex adjacent face list
     // Union of v0 and v1
@@ -694,6 +704,7 @@ void Mesh::edgeCollapseAtMidpoint(VertexPair* currPair) {
         computeFaceNormal(currFace);
     }
     
+    /*
     // Update v0 and v1 vertToVertAdj
     for (int i = (int)v0->vertToVertAdj->size() - 1; i >= 0; i--) {
         Vertex* currVert = v0->vertToVertAdj->at(i);
@@ -725,7 +736,7 @@ void Mesh::edgeCollapseAtMidpoint(VertexPair* currPair) {
                 }
             }
         }
-    }
+    } */
     
     // Construct VertToVertAdj2
     for (int i = 0; i < v0->vertToVertAdj->size(); i++) {
@@ -799,12 +810,8 @@ void Mesh::updatePair(VertexPair* currPair, Vertex* oldVert, Vertex* newVert) {
         if (otherPair->equals(*currPair)) {
             // Have both pairs now
             currPair->replaceVertex(oldVert, newVert);
-            if (currPair->a->valid == true && currPair->b->valid == true &&
-                !newVert->checkPairDuplicate(currPair)) {
-                newVert->localPairs->push_back(currPair);
-            }
-            
             otherPair->replaceVertex(oldVert, newVert);
+            
             // Check for and delete duplicates
             bool flag = true;
             for (int j = (int)otherVert->localPairs->size()-1; j >= 0; j--) {
@@ -813,12 +820,17 @@ void Mesh::updatePair(VertexPair* currPair, Vertex* oldVert, Vertex* newVert) {
                     // Don't delete if only one
                     if (flag) {
                         flag = false;
-                        continue;
+                        //continue;
                     }
                     else {
                         otherVert->localPairs->erase(otherVert->localPairs->begin() + j);
                     }
                 }
+            }
+            
+            if (currPair->a->valid == true && currPair->b->valid == true &&
+                !newVert->checkPairDuplicate(currPair)) {
+                newVert->localPairs->push_back(currPair);
             }
             
             return;
