@@ -22,9 +22,9 @@ DrawData Globals::drawData;
 UpdateData Globals::updateData;
 
 
-//Mesh* Globals::teapot = new Mesh(TEAPOT);
+Mesh* Globals::teapot = new Mesh(TEAPOT);
 //Mesh* Globals::armadillo = new Mesh(ARMADILLO);
-//Mesh* Globals::testpatch = new Mesh(TESTPATCH);
+Mesh* Globals::testpatch = new Mesh(TESTPATCH);
 Mesh* Globals::plane = new Mesh(PLANE);
 
 Mesh* Globals::objdraw = Globals::plane;

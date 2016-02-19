@@ -1003,7 +1003,7 @@ void Mesh::progressiveMesh()
 
 
 void Mesh::vertexSplit(Vertex *vertToRemove)
-{   
+{
     int v0 = vertToRemove->parent1;
     int v1 = vertToRemove->parent2;
     
