@@ -114,7 +114,6 @@ public:
     // Given vertex, find neighboring vertices
     // Given edge, find vertices and faces it touches
     
-    void edgeCollapse(Vertex *v0, Vertex *v1);
     void vertexSplit(Vertex*);
     void progressiveMesh(void);
     

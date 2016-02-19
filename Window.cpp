@@ -189,7 +189,7 @@ void Window::processNormalKeys(unsigned char key, int x, int y)
             
         case 'd':
             std::cout << "\nBegin edge collapse" << std::endl;
-            Globals::objdraw->edgeCollapse(Globals::objdraw->vertices->at(0), Globals::objdraw->vertices->at(1));
+            //Globals::objdraw->edgeCollapse(Globals::objdraw->vertices->at(0), Globals::objdraw->vertices->at(1));
             std::cout << "End edge collapse" << std::endl;
             break;
         case 'p':
@@ -236,7 +236,7 @@ void Window::processSpecialKeys(int key, int x, int y)
             Globals::camera = Camera();
             break;
         case GLUT_KEY_F4:    // plane
-            Globals::objdraw = Globals::plane;
+            //Globals::objdraw = Globals::plane;
             Globals::camera = Camera();
             break;
         case GLUT_KEY_DOWN:  // quadric simplification

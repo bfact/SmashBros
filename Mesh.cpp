@@ -56,7 +56,7 @@ Mesh::~Mesh()
     //deleteVector(Edge*, edges);
     //deleteVector(Vector3*, colors);
     
-    // don't know if we need to delete 
+    // don't know if we need to delete
     while ( !vSplitStack.empty() )
     {
         vSplitStack.pop();
@@ -1084,7 +1084,7 @@ void Mesh::vertexSplit(Vertex *vertToRemove)
         Face* currFace = vertToAdd1->vertToFaceAdj->at(i);
         computeFaceNormal(currFace);
     }
-
+    
     // Remove original vertex from vert to vert adj
     // and add v0 and v1 to them
     for (int i = 0; i < vertToRemove->vertToVertAdj->size(); i++) {
@@ -1118,15 +1118,15 @@ void Mesh::vertexSplit(Vertex *vertToRemove)
     
     // Update normals of neighboring faces/vertices
     /*
-    for (int i = 0; i < vertToAdd0->vertToVertAdj->size(); i++) {
-        Vertex* currVert = vertToAdd0->vertToVertAdj->at(i);
-        computeVertexNormal(currVert);
-    }
-    
-    for (int i = 0; i < vertToAdd1->vertToVertAdj->size(); i++) {
-        Vertex* currVert = vertToAdd1->vertToVertAdj->at(i);
-        computeVertexNormal(currVert);
-    }*/
+     for (int i = 0; i < vertToAdd0->vertToVertAdj->size(); i++) {
+     Vertex* currVert = vertToAdd0->vertToVertAdj->at(i);
+     computeVertexNormal(currVert);
+     }
+     
+     for (int i = 0; i < vertToAdd1->vertToVertAdj->size(); i++) {
+     Vertex* currVert = vertToAdd1->vertToVertAdj->at(i);
+     computeVertexNormal(currVert);
+     }*/
     
     VertexPair* newPair = new VertexPair(vertToAdd0, vertToAdd1);
     vertToRemove->localPairs->push_back(newPair);
