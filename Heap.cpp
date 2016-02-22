@@ -7,7 +7,31 @@
 //
 
 #include "Heap.h"
+/*
+Heap::Heap()
+{
+    queue = new std::priority_queue<VertexPair*, std::vector<VertexPair*>, VertexPair::Compare >();
+}
 
+VertexPair* Heap::GetMin() {
+    return queue->top();
+}
+void Heap::insert(VertexPair* newPair) {
+    if (newPair->a->valid != true || newPair->b->valid != true) {
+        return;
+    }
+    queue->push(newPair);
+}
+
+void Heap::DeleteMin() {
+    queue->pop();
+}
+
+int Heap::size() {
+    return (int)queue->size();
+} */
+
+/*
 Heap::Heap(vector<VertexPair*>* vector) : heapVector(vector)
 {
     Heapify();
@@ -76,16 +100,10 @@ void Heap::BubbleUp(int index)
 
 void Heap::insert(VertexPair* newPair)
 {
-    
-    // Only insert unique elements
-    for (int i = 0; i < heapVector->size(); i++) {
-        if (newPair->equals(*heapVector->at(i))) {
-            //std::cerr << "Repeat" << std::endl;
-            return;
-        }
-    }
-    
     //std::cerr << "Adding pair" << std::endl;
+    if (newPair->a->valid != true || newPair->b->valid != true) {
+        return;
+    }
     
     int length = (int) heapVector->size();
     //(*heapVector)[length] = newPair;
@@ -122,3 +140,21 @@ int Heap::size() {
 VertexPair* Heap::at(int index) {
     return heapVector->at(index);
 }
+
+void Heap::updateHeap(VertexPair* collapsedPair, Vertex* midVert) {
+    // Convert to a set to remove duplicates
+    std::unordered_set<VertexPair*> s;
+    unsigned int size = heapVector->size();
+    for( unsigned int i = 0; i < size; ++i ) {
+        
+ 
+        
+        if (((*heapVector)[i]->a != (*heapVector)[i]->b) && ((*heapVector)[i]->a->valid == true) && ((*heapVector)[i]->b->valid == true)) {
+            s.insert( (*heapVector)[i] );
+        }
+        
+        
+    }
+    heapVector->assign( s.begin(), s.end() );
+    //Heapify();
+} */

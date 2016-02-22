@@ -236,11 +236,23 @@ void Window::processSpecialKeys(int key, int x, int y)
             Globals::camera = Camera();
             break;
         case GLUT_KEY_F4:    // plane
-            //Globals::objdraw = Globals::plane;
+            Globals::objdraw = Globals::plane;
             Globals::camera = Camera();
             break;
         case GLUT_KEY_DOWN:  // quadric simplification
-            Globals::objdraw->quadricSimplification();
+            if (glutGetModifiers() == GLUT_ACTIVE_SHIFT) {
+                for (int i = 0; i < 50; i++) {
+                    Globals::objdraw->quadricSimplification();
+                }
+            }
+            else if (glutGetModifiers() == GLUT_ACTIVE_ALT) {
+                for (int i = 0; i < 2500; i++) {
+                    Globals::objdraw->quadricSimplification();
+                }
+            }
+            else {
+                Globals::objdraw->quadricSimplification();
+            }
             break;
         case GLUT_KEY_UP:    // progressive meshes
             Globals::objdraw->progressiveMesh();

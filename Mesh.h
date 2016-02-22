@@ -8,7 +8,7 @@
 #include <deque>
 #include <string>
 #include <stack>
-#include "Heap.h"
+//#include "Heap.h"
 #include "Vector3.h"
 #include "Vector4.h"
 #include "Matrix4.h"
@@ -21,6 +21,8 @@ struct Face;
 struct Vertex;
 struct VertexPair;
 class Heap;
+class Compare;
+
 
 class Mesh : public Drawable
 {
@@ -43,7 +45,8 @@ protected:
     std::vector<Face*>* faces;
     
     // A Heap of VertexPairs
-    Heap* pairs;
+    //Heap* pairs;
+    std::priority_queue<VertexPair*, std::vector<VertexPair*>, Compare >* pairs;
     
     //Parse
     void parse(std::string&);
@@ -218,7 +221,12 @@ struct VertexPair {
     }
     
     void printVertexPair(ofstream&);
+    
+    
+    
 };
+
+
 
 /*
  * Each face contains 3 vertices, 3 edges, a face normal, and face adjacency
@@ -236,6 +244,19 @@ struct Face {
     
     void printVertexCoordinates(ofstream&, std::vector<Vertex*>*);
     bool isDegenerate();
+};
+
+class Compare
+{
+public:
+    
+    inline bool operator()(const VertexPair* lhs, const VertexPair* rhs){
+        /* do actual comparison */
+        if (lhs->error > rhs->error) {
+            return false;
+        }
+        return true;
+    }
 };
 
 

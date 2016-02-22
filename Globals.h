@@ -22,6 +22,7 @@ public:
     static Mesh* armadillo;
     static Mesh* testpatch;
     static Mesh* plane;
+    static Mesh* bunny;
     
     static Mesh* objdraw;
     
